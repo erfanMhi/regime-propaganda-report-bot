@@ -51,6 +51,14 @@ username3
 
 ---
 
+## ⚠️ Caution
+
+Using bots on Instagram **may result in a temporary ban** on your account. Use at your own risk.
+
+That said, I've used this tool multiple times without any issues — the probability seems pretty low.
+
+---
+
 ## ❓ Troubleshooting
 
 | Problem | Solution |
