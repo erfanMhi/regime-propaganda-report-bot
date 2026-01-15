@@ -40,6 +40,7 @@ async function startBot(tabId, targets, startIndex) {
     // Resuming - keep existing results
     await chrome.storage.local.set({
       isRunning: true,
+      currentIndex: startIndex,
       totalTargets: targets.length
     });
   }
@@ -87,6 +88,9 @@ async function startBot(tabId, targets, startIndex) {
         console.error('Error sending message to content script:', e);
         await updateResult(username, 'failed');
       }
+
+      // Mark this item as completed (advance progress) before the inter-target delay
+      await chrome.storage.local.set({ currentIndex: i + 1 });
       
       // Wait between profiles (15-25 seconds)
       if (i < targets.length - 1) {
@@ -97,6 +101,8 @@ async function startBot(tabId, targets, startIndex) {
     } catch (e) {
       console.error('Error processing', username, e);
       await updateResult(username, 'failed');
+      // Even on errors, advance progress so Resume continues forward
+      await chrome.storage.local.set({ currentIndex: i + 1 });
     }
   }
   
