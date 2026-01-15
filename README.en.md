@@ -15,7 +15,7 @@
 
 ---
 
-## ⚡ Quick Start
+## ⚡ How to Run
 
 ### Step 1: Download & Run
 
@@ -24,6 +24,8 @@ Download the project ZIP, **unzip** it, then run the launcher file! If Python or
 | Mac | Windows |
 |-----|---------|
 | Double-click `Start Bot.command` | Double-click `Start Bot.bat` |
+
+> **Mac users:** If you see "Apple could not verify", go to **System Settings → Privacy & Security → Open Anyway**
 
 The launcher will ask you to quit Chrome if it's running (this is required to run Chrome in debug mode so the bot can control it), then open the bot interface automatically.
 
