@@ -8,8 +8,8 @@
 
 ## ⬇️ Download
 
-- **Best option**: Download the latest ZIP from **GitHub Releases**: `https://github.com/<OWNER>/regime-propaganda-report-bot/releases`
-- **Direct ZIP** (if you prefer): `https://github.com/<OWNER>/regime-propaganda-report-bot/archive/refs/heads/main.zip`
+- **Best option**: Download the latest ZIP from **GitHub Releases**: `https://github.com/erfanMhi/regime-propaganda-report-bot/releases`
+- **Direct ZIP** (if you prefer): `https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip`
 
 ---
 
