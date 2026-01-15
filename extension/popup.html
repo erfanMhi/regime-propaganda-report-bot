@@ -16,7 +16,7 @@
     .tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-weight:600;font-size:13px;color:#666;border-bottom:3px solid transparent;transition:all 0.2s}
     .tab:hover{background:#f5f5f5}
     .tab.active{color:#22c55e;border-bottom-color:#22c55e}
-    .tab.active.twitter{color:#1d9bf0;border-bottom-color:#1d9bf0}
+    .tab.active.twitter{color:#000;border-bottom-color:#000}
     .tab-icon{margin-right:6px}
     
     .content{padding:16px}
@@ -28,27 +28,27 @@
     .status-label{color:#555;font-size:12px;font-weight:500}
     .status-value{font-weight:700;font-size:12px}
     .ready{color:#22c55e}.not-ready{color:#dc2626}.running{color:#22c55e}.paused{color:#f59e0b}
-    .ready.twitter{color:#1d9bf0}
+    .ready.twitter{color:#000}
     .targets-section{margin-bottom:12px}
     .targets-section h3{font-size:12px;color:#555;margin-bottom:8px;font-weight:600}
     .targets-input{width:100%;height:100px;background:#fff;border:2px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-family:monospace;font-size:11px;padding:8px;resize:none}
     .targets-input:focus{outline:none;border-color:#22c55e}
-    .targets-input.twitter:focus{border-color:#1d9bf0}
+    .targets-input.twitter:focus{border-color:#000}
     .targets-input::placeholder{color:#999}
     .actions{display:flex;gap:6px;margin-bottom:12px}
     .btn{flex:1;padding:10px 8px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
     .btn:disabled{opacity:0.4;cursor:not-allowed}
     .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
     .btn-primary{background:#22c55e;color:#fff}
-    .btn-primary.twitter{background:#1d9bf0}
+    .btn-primary.twitter{background:#000}
     .btn-secondary{background:#fff;color:#22c55e;border:2px solid #22c55e;padding:8px 6px}
-    .btn-secondary.twitter{color:#1d9bf0;border-color:#1d9bf0}
+    .btn-secondary.twitter{color:#000;border-color:#000}
     .btn-danger{background:#dc2626;color:#fff}
     .btn.hidden{display:none}
     .progress-section{margin-bottom:12px}
     .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden}
     .progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);width:0%;transition:width 0.3s}
-    .progress-fill.twitter{background:linear-gradient(90deg,#1d9bf0,#0c7abf)}
+    .progress-fill.twitter{background:linear-gradient(90deg,#000,#333)}
     .progress-text{font-size:12px;color:#555;text-align:center;margin-top:6px;font-weight:600}
     .results-section{max-height:120px;overflow-y:auto}
     .result-item{display:flex;justify-content:space-between;padding:8px 10px;font-size:11px;border-radius:4px;margin-bottom:4px;font-weight:500}
@@ -70,7 +70,7 @@
       <span class="tab-icon">📷</span>Instagram
     </div>
     <div class="tab" data-tab="twitter">
-      <span class="tab-icon">𝕏</span>Twitter
+      <span class="tab-icon">𝕏</span>X
     </div>
   </div>
   
@@ -104,11 +104,11 @@
       <div class="results-section" id="ig-results"></div>
     </div>
     
-    <!-- Twitter Tab -->
+    <!-- X Tab -->
     <div id="twitter-content" class="tab-content">
       <div class="status-card">
         <div class="status-row">
-          <span class="status-label">Twitter/X Tab</span>
+          <span class="status-label">X Tab</span>
           <span class="status-value" id="tw-status">Checking...</span>
         </div>
         <div class="status-row">
@@ -116,7 +116,7 @@
           <span class="status-value" id="tw-bot-status">Idle</span>
         </div>
       </div>
-      <div id="tw-warning" class="warning" style="display:none">Please open Twitter/X in a tab first</div>
+      <div id="tw-warning" class="warning" style="display:none">Please open X in a tab first</div>
       <div class="targets-section">
         <h3>Targets (one username per line, without @)</h3>
         <textarea class="targets-input twitter" id="tw-targets" placeholder="username1&#10;username2&#10;username3"></textarea>

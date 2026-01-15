@@ -1,5 +1,5 @@
-// Content Script for Twitter/X - Runs on x.com and twitter.com
-// Handles the actual DOM manipulation and clicking for Twitter reporting
+// Content Script for X - Runs on x.com and twitter.com
+// Handles the actual DOM manipulation and clicking for X reporting
 
 const NOT_FOUND_INDICATORS = [
   "this account doesn't exist",
@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     doReport(message.username).then(result => {
       sendResponse(result);
     }).catch(err => {
-      console.error('[ReportBot Twitter] Report error:', err);
+      console.error('[ReportBot X] Report error:', err);
       sendResponse({ success: false, error: err.message });
     });
     return true; // Keep channel open for async response
@@ -25,85 +25,85 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function doReport(username) {
-  console.log('[ReportBot Twitter] Starting report for:', username);
+  console.log('[ReportBot X] Starting report for:', username);
   
   // Wait for page to stabilize
   await sleep(2000);
   
   // Check if profile exists
   if (!checkProfileExists()) {
-    console.log('[ReportBot Twitter] Profile not found');
+    console.log('[ReportBot X] Profile not found');
     return { success: false, notFound: true };
   }
   
   // Check for rate limiting
   if (isRateLimited()) {
-    console.log('[ReportBot Twitter] Rate limited, waiting...');
+    console.log('[ReportBot X] Rate limited, waiting...');
     await sleep(60000);
     return { success: false, error: 'Rate limited' };
   }
   
   try {
     // Step 1: Click the 3 dots menu (userActions button)
-    console.log('[ReportBot Twitter] Step 1: Click options menu (3 dots)');
+    console.log('[ReportBot X] Step 1: Click options menu (3 dots)');
     if (!await clickOptionsMenu()) {
-      console.log('[ReportBot Twitter] Could not find options menu');
+      console.log('[ReportBot X] Could not find options menu');
       return { success: false, error: 'No options menu' };
     }
     await sleep(1000);
     
     // Step 2: Click Report @username button
-    console.log('[ReportBot Twitter] Step 2: Click Report button');
+    console.log('[ReportBot X] Step 2: Click Report button');
     if (!await clickReportButton(username)) {
-      console.log('[ReportBot Twitter] Could not find Report button');
+      console.log('[ReportBot X] Could not find Report button');
       await closeDialogs();
       return { success: false, error: 'No Report button' };
     }
     await sleep(1000);
     
     // Step 3: Click "Hate" option
-    console.log('[ReportBot Twitter] Step 3: Click Hate option');
+    console.log('[ReportBot X] Step 3: Click Hate option');
     if (!await clickHateOption()) {
-      console.log('[ReportBot Twitter] Could not find Hate option');
+      console.log('[ReportBot X] Could not find Hate option');
       await closeDialogs();
       return { success: false, error: 'No Hate option' };
     }
     await sleep(500);
     
     // Step 3b: Click Next to proceed to sub-options
-    console.log('[ReportBot Twitter] Step 3b: Click Next after Hate');
+    console.log('[ReportBot X] Step 3b: Click Next after Hate');
     await clickNextButton();
     await sleep(1000);
     
     // Step 4: Click "Dehumanization" option
-    console.log('[ReportBot Twitter] Step 4: Click Dehumanization option');
+    console.log('[ReportBot X] Step 4: Click Dehumanization option');
     if (!await clickDehumanizationOption()) {
-      console.log('[ReportBot Twitter] Could not find Dehumanization option');
+      console.log('[ReportBot X] Could not find Dehumanization option');
       await closeDialogs();
       return { success: false, error: 'No Dehumanization option' };
     }
     await sleep(1000);
     
     // Step 5: Click Submit button (ChoiceSelectionNextButton)
-    console.log('[ReportBot Twitter] Step 5: Click Submit');
+    console.log('[ReportBot X] Step 5: Click Submit');
     if (!await clickSubmit()) {
-      console.log('[ReportBot Twitter] Could not find Submit button, trying alternatives');
+      console.log('[ReportBot X] Could not find Submit button, trying alternatives');
     }
     await sleep(1500);
     
     // Step 6: Click any additional confirmation buttons
-    console.log('[ReportBot Twitter] Step 6: Click any confirmation');
+    console.log('[ReportBot X] Step 6: Click any confirmation');
     await clickNextButton();
     await sleep(1000);
     
     // Close any remaining dialogs
     await closeDialogs();
     
-    console.log('[ReportBot Twitter] Report complete for:', username);
+    console.log('[ReportBot X] Report complete for:', username);
     return { success: true };
     
   } catch (e) {
-    console.error('[ReportBot Twitter] Error during report:', e);
+    console.error('[ReportBot X] Error during report:', e);
     await closeDialogs();
     return { success: false, error: e.message };
   }
@@ -319,4 +319,4 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-console.log('[ReportBot Twitter] Content script loaded');
+console.log('[ReportBot X] Content script loaded');

@@ -39,7 +39,7 @@ saayebanoo
 ali.zahraei.110
 mojtaba.azhdari81`;
 
-// Default targets for Twitter - from Islamic Republic Influence Networks dataset
+// Default targets for X - from Islamic Republic Influence Networks dataset
 // Source: https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks
 // Total accounts: 2846
 const DEFAULT_TW_TARGETS = `Ali19805851761
