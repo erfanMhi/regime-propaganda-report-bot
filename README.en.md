@@ -29,9 +29,10 @@ A browser window will open with the bot interface.
 
 ### Step 2: Setup Chrome
 
-1. **Quit Chrome completely** first (Cmd+Q on Mac / close all windows on Windows)
-2. Click **"Launch Chrome"** in the bot interface
-3. **Log into Instagram** in the Chrome window that opens *(only needed once - session is saved)*
+1. **Quit Chrome completely BEFORE running the script** (Cmd+Q on Mac / close all windows on Windows)
+2. Run the launcher - the bot UI will open in your browser
+3. Click **"Launch Chrome"** in the bot interface
+4. **Log into Instagram** in the Chrome window that opens *(only needed once - session is saved)*
 
 ### Step 3: Start Reporting
 
