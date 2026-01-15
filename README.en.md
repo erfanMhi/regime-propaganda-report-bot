@@ -63,6 +63,7 @@ That said, I've used this tool multiple times without any issues - the probabili
 
 | Problem | Solution |
 |---------|----------|
+| "Apple could not verify" (Mac) | Right-click the file → Open → Open |
 | "Python not found" | Reinstall Python, check "Add to PATH" |
 | Bot won't start | Make sure Chrome is installed |
 | Permission denied (Mac) | Run: `chmod +x "Start Bot.command"` in Terminal |

@@ -61,6 +61,7 @@ username3
 
 | مشکل | راه حل |
 |---------|----------|
+| "Apple could not verify" (مک) | روی فایل راست‌کلیک → Open → Open |
 | "Python not found" | پایتون را دوباره نصب کنید، گزینه "Add to PATH" را تیک بزنید |
 | ربات اجرا نمی‌شود | مطمئن شوید کروم نصب است |
 | Permission denied (مک) | در ترمینال اجرا کنید: `chmod +x "Start Bot.command"` |
