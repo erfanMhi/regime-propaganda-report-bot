@@ -145,28 +145,45 @@ async function clickOptionsMenu() {
 }
 
 async function clickReportButton(username) {
-  // Look for Report @username text
-  const reportTexts = [
-    `Report @${username}`,
-    `Report`,
-    'Report @'
-  ];
-  
-  for (const text of reportTexts) {
-    const elements = document.querySelectorAll('[role="menuitem"], [role="button"], div, span');
-    for (const el of elements) {
-      const elText = el.textContent?.trim() || '';
-      if (elText.toLowerCase().includes(text.toLowerCase())) {
-        // Find the clickable parent
-        const clickable = el.closest('[role="menuitem"]') || el.closest('a') || el.closest('div[role="button"]') || el;
-        if (clickable) {
-          clickable.click();
-          return true;
-        }
-      }
+  // Prefer the menu dialog X shows after clicking userActions
+  const dialog = document.querySelector('[data-testid="sheetDialog"]') || document;
+  const menuItems = Array.from(dialog.querySelectorAll('[role="menuitem"]'));
+
+  const normalizedUsername = (username || '').replace(/^@/, '').toLowerCase();
+
+  // Strong match first: "Report @username"
+  for (const item of menuItems) {
+    const t = (item.textContent || '').trim().toLowerCase();
+    if (normalizedUsername && t.includes(`report @${normalizedUsername}`)) {
+      item.scrollIntoView({ block: 'center' });
+      await sleep(100);
+      item.click();
+      return true;
     }
   }
-  
+
+  // Next best: any "Report @" item (assume current profile)
+  for (const item of menuItems) {
+    const t = (item.textContent || '').trim().toLowerCase();
+    if (t.startsWith('report @') || t.includes('report @')) {
+      item.scrollIntoView({ block: 'center' });
+      await sleep(100);
+      item.click();
+      return true;
+    }
+  }
+
+  // Fallback: any "Report" menu item inside the dialog
+  for (const item of menuItems) {
+    const t = (item.textContent || '').trim().toLowerCase();
+    if (t === 'report' || t.startsWith('report')) {
+      item.scrollIntoView({ block: 'center' });
+      await sleep(100);
+      item.click();
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -220,7 +237,9 @@ async function clickRadioOptionByText(texts) {
 async function clickNextButton() {
   // First try the specific data-testid for Twitter's choice selection button
   const choiceButton = document.querySelector('[data-testid="ChoiceSelectionNextButton"]');
-  if (choiceButton) {
+  if (choiceButton && isClickable(choiceButton)) {
+    choiceButton.scrollIntoView({ block: 'center' });
+    await sleep(100);
     choiceButton.click();
     return true;
   }
@@ -230,9 +249,12 @@ async function clickNextButton() {
   const buttons = document.querySelectorAll('button, [role="button"]');
   
   for (const btn of buttons) {
+    if (!isClickable(btn)) continue;
     const btnText = btn.textContent?.trim() || '';
     for (const text of buttonTexts) {
       if (btnText.toLowerCase() === text.toLowerCase()) {
+        btn.scrollIntoView({ block: 'center' });
+        await sleep(100);
         btn.click();
         return true;
       }
@@ -244,13 +266,22 @@ async function clickNextButton() {
 async function clickSubmit() {
   // First try the specific Submit button with data-testid
   const submitButton = document.querySelector('[data-testid="ChoiceSelectionNextButton"]');
-  if (submitButton) {
+  if (submitButton && isClickable(submitButton)) {
+    submitButton.scrollIntoView({ block: 'center' });
+    await sleep(100);
     submitButton.click();
     return true;
   }
   
   // Fallback to generic next button
   return await clickNextButton();
+}
+
+function isClickable(el) {
+  if (!el) return false;
+  if (el.disabled === true) return false;
+  const ariaDisabled = el.getAttribute && el.getAttribute('aria-disabled');
+  return ariaDisabled !== 'true';
 }
 
 async function closeDialogs() {
