@@ -47,6 +47,7 @@ async function init() {
   if (!s.targets) await chrome.storage.local.set({ targets: DEFAULT_TARGETS });
   $('targets').oninput = async () => await chrome.storage.local.set({ targets: $('targets').value });
   $('start-btn').onclick = start;
+  $('resume-btn').onclick = resume;
   $('stop-btn').onclick = stop;
   // Background sends STATUS_UPDATE without payload; re-read state from storage.
   chrome.runtime.onMessage.addListener(m => { if (m.type === 'STATUS_UPDATE') check() });
@@ -61,13 +62,11 @@ async function check() {
     $('ig-status').textContent = 'Ready';
     $('ig-status').className = 'status-value ready';
     $('warning').style.display = 'none';
-    $('start-btn').disabled = false;
   } else {
     tabId = null;
     $('ig-status').textContent = 'Not Found';
     $('ig-status').className = 'status-value not-ready';
     $('warning').style.display = 'block';
-    $('start-btn').disabled = true;
   }
   const s = await chrome.storage.local.get(['results', 'currentIndex', 'isRunning', 'totalTargets']);
   update(s);
@@ -80,10 +79,24 @@ function update(s) {
   const total = safe.totalTargets || 0;
   const results = safe.results || [];
   
-  $('bot-status').textContent = running ? 'Running...' : 'Idle';
+  // Check if there's unfinished progress (stopped mid-way)
+  const hasProgress = idx > 0 && idx < total && !running;
+  
+  $('bot-status').textContent = running ? 'Running...' : (hasProgress ? 'Paused' : 'Idle');
   $('bot-status').className = 'status-value ' + (running ? 'running' : 'ready');
+  
+  // Button states
   $('start-btn').disabled = running || !tabId;
+  $('resume-btn').disabled = running || !tabId;
   $('stop-btn').disabled = !running;
+  
+  // Show/hide Resume button
+  if (hasProgress) {
+    $('resume-btn').classList.remove('hidden');
+  } else {
+    $('resume-btn').classList.add('hidden');
+  }
+  
   $('progress').style.width = total > 0 ? Math.round(idx / total * 100) + '%' : '0%';
   $('progress-text').textContent = idx + ' / ' + total;
   $('results').innerHTML = results.map(r => 
@@ -104,7 +117,23 @@ async function start() {
     results: [],
     isRunning: true
   });
-  chrome.runtime.sendMessage({ type: 'START_BOT', tabId, targets });
+  chrome.runtime.sendMessage({ type: 'START_BOT', tabId, targets, startIndex: 0 });
+}
+
+async function resume() {
+  const s = await chrome.storage.local.get(['currentIndex', 'totalTargets', 'results']);
+  const targets = $('targets').value.split('\n').map(t => t.trim()).filter(t => t);
+  if (!targets.length) return alert('Add at least one target');
+  
+  const startIndex = s.currentIndex || 0;
+  
+  await chrome.storage.local.set({
+    targets: $('targets').value,
+    targetsList: targets,
+    totalTargets: targets.length,
+    isRunning: true
+  });
+  chrome.runtime.sendMessage({ type: 'START_BOT', tabId, targets, startIndex });
 }
 
 async function stop() {

@@ -7,7 +7,7 @@ let currentTabId = null;
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'START_BOT') {
-    startBot(message.tabId, message.targets);
+    startBot(message.tabId, message.targets, message.startIndex || 0);
   } else if (message.type === 'STOP_BOT') {
     stopBot();
   }
@@ -24,19 +24,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-async function startBot(tabId, targets) {
+async function startBot(tabId, targets, startIndex) {
   isRunning = true;
   currentTabId = tabId;
   
-  await chrome.storage.local.set({
-    isRunning: true,
-    currentIndex: 0,
-    results: [],
-    totalTargets: targets.length
-  });
+  // If starting fresh (index 0), clear results
+  if (startIndex === 0) {
+    await chrome.storage.local.set({
+      isRunning: true,
+      currentIndex: 0,
+      results: [],
+      totalTargets: targets.length
+    });
+  } else {
+    // Resuming - keep existing results
+    await chrome.storage.local.set({
+      isRunning: true,
+      totalTargets: targets.length
+    });
+  }
   
-  // Process targets one by one
-  for (let i = 0; i < targets.length; i++) {
+  // Process targets starting from startIndex
+  for (let i = startIndex; i < targets.length; i++) {
     // Check if still running
     const state = await chrome.storage.local.get(['isRunning']);
     if (!state.isRunning) {
@@ -108,7 +117,13 @@ function stopBot() {
 async function addResult(username, status) {
   const state = await chrome.storage.local.get(['results']);
   const results = state.results || [];
-  results.push({ username, status });
+  // Check if already exists (for resume case)
+  const existing = results.findIndex(r => r.username === username);
+  if (existing >= 0) {
+    results[existing].status = status;
+  } else {
+    results.push({ username, status });
+  }
   await chrome.storage.local.set({ results });
   notifyPopup();
 }
