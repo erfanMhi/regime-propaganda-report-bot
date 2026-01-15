@@ -3,36 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Instagram Report Bot</title>
+  <title>Report Bot</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#1a1a1a;width:360px;min-height:400px;padding:16px}
-    .header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #22c55e}
-    .header h1{font-size:20px;margin-bottom:4px;color:#22c55e}
-    .header p{font-size:11px;color:#666}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#1a1a1a;width:360px;min-height:450px;padding:0}
+    .header{text-align:center;padding:12px 16px;border-bottom:2px solid #22c55e}
+    .header h1{font-size:18px;margin-bottom:2px;color:#22c55e}
+    .header p{font-size:10px;color:#666}
+    
+    /* Tabs */
+    .tabs{display:flex;border-bottom:1px solid #e0e0e0}
+    .tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-weight:600;font-size:13px;color:#666;border-bottom:3px solid transparent;transition:all 0.2s}
+    .tab:hover{background:#f5f5f5}
+    .tab.active{color:#22c55e;border-bottom-color:#22c55e}
+    .tab.active.twitter{color:#1d9bf0;border-bottom-color:#1d9bf0}
+    .tab-icon{margin-right:6px}
+    
+    .content{padding:16px}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    
     .status-card{background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:12px}
     .status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
     .status-label{color:#555;font-size:12px;font-weight:500}
     .status-value{font-weight:700;font-size:12px}
     .ready{color:#22c55e}.not-ready{color:#dc2626}.running{color:#22c55e}.paused{color:#f59e0b}
+    .ready.twitter{color:#1d9bf0}
     .targets-section{margin-bottom:12px}
     .targets-section h3{font-size:12px;color:#555;margin-bottom:8px;font-weight:600}
-    .targets-input{width:100%;height:120px;background:#fff;border:2px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-family:monospace;font-size:11px;padding:8px;resize:none}
+    .targets-input{width:100%;height:100px;background:#fff;border:2px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-family:monospace;font-size:11px;padding:8px;resize:none}
     .targets-input:focus{outline:none;border-color:#22c55e}
+    .targets-input.twitter:focus{border-color:#1d9bf0}
     .targets-input::placeholder{color:#999}
     .actions{display:flex;gap:6px;margin-bottom:12px}
     .btn{flex:1;padding:10px 8px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
     .btn:disabled{opacity:0.4;cursor:not-allowed}
     .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
     .btn-primary{background:#22c55e;color:#fff}
+    .btn-primary.twitter{background:#1d9bf0}
     .btn-secondary{background:#fff;color:#22c55e;border:2px solid #22c55e;padding:8px 6px}
+    .btn-secondary.twitter{color:#1d9bf0;border-color:#1d9bf0}
     .btn-danger{background:#dc2626;color:#fff}
     .btn.hidden{display:none}
     .progress-section{margin-bottom:12px}
     .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden}
     .progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);width:0%;transition:width 0.3s}
+    .progress-fill.twitter{background:linear-gradient(90deg,#1d9bf0,#0c7abf)}
     .progress-text{font-size:12px;color:#555;text-align:center;margin-top:6px;font-weight:600}
-    .results-section{max-height:150px;overflow-y:auto}
+    .results-section{max-height:120px;overflow-y:auto}
     .result-item{display:flex;justify-content:space-between;padding:8px 10px;font-size:11px;border-radius:4px;margin-bottom:4px;font-weight:500}
     .result-item.success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
     .result-item.failed{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
@@ -46,31 +64,76 @@
     <h1>✊ Report Bot</h1>
     <p>Fight back against the Islamic regime's tyranny</p>
   </div>
-  <div class="status-card">
-    <div class="status-row">
-      <span class="status-label">Instagram Tab</span>
-      <span class="status-value" id="ig-status">Checking...</span>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="instagram">
+      <span class="tab-icon">📷</span>Instagram
     </div>
-    <div class="status-row">
-      <span class="status-label">Bot Status</span>
-      <span class="status-value" id="bot-status">Idle</span>
+    <div class="tab" data-tab="twitter">
+      <span class="tab-icon">𝕏</span>Twitter
     </div>
   </div>
-  <div id="warning" class="warning" style="display:none">Please open Instagram in a tab first</div>
-  <div class="targets-section">
-    <h3>Targets (one username per line, without @)</h3>
-    <textarea class="targets-input" id="targets" placeholder="username1&#10;username2&#10;username3"></textarea>
+  
+  <!-- Instagram Tab -->
+  <div class="content">
+    <div id="instagram-content" class="tab-content active">
+      <div class="status-card">
+        <div class="status-row">
+          <span class="status-label">Instagram Tab</span>
+          <span class="status-value" id="ig-status">Checking...</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Bot Status</span>
+          <span class="status-value" id="ig-bot-status">Idle</span>
+        </div>
+      </div>
+      <div id="ig-warning" class="warning" style="display:none">Please open Instagram in a tab first</div>
+      <div class="targets-section">
+        <h3>Targets (one username per line, without @)</h3>
+        <textarea class="targets-input" id="ig-targets" placeholder="username1&#10;username2&#10;username3"></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="ig-start-btn" disabled>▶ Start</button>
+        <button class="btn btn-secondary hidden" id="ig-resume-btn" disabled>↻ Resume</button>
+        <button class="btn btn-danger" id="ig-stop-btn" disabled>⏹ Stop</button>
+      </div>
+      <div class="progress-section">
+        <div class="progress-bar"><div class="progress-fill" id="ig-progress"></div></div>
+        <div class="progress-text" id="ig-progress-text">0 / 0</div>
+      </div>
+      <div class="results-section" id="ig-results"></div>
+    </div>
+    
+    <!-- Twitter Tab -->
+    <div id="twitter-content" class="tab-content">
+      <div class="status-card">
+        <div class="status-row">
+          <span class="status-label">Twitter/X Tab</span>
+          <span class="status-value" id="tw-status">Checking...</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Bot Status</span>
+          <span class="status-value" id="tw-bot-status">Idle</span>
+        </div>
+      </div>
+      <div id="tw-warning" class="warning" style="display:none">Please open Twitter/X in a tab first</div>
+      <div class="targets-section">
+        <h3>Targets (one username per line, without @)</h3>
+        <textarea class="targets-input twitter" id="tw-targets" placeholder="username1&#10;username2&#10;username3"></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary twitter" id="tw-start-btn" disabled>▶ Start</button>
+        <button class="btn btn-secondary twitter hidden" id="tw-resume-btn" disabled>↻ Resume</button>
+        <button class="btn btn-danger" id="tw-stop-btn" disabled>⏹ Stop</button>
+      </div>
+      <div class="progress-section">
+        <div class="progress-bar"><div class="progress-fill twitter" id="tw-progress"></div></div>
+        <div class="progress-text" id="tw-progress-text">0 / 0</div>
+      </div>
+      <div class="results-section" id="tw-results"></div>
+    </div>
   </div>
-  <div class="actions">
-    <button class="btn btn-primary" id="start-btn" disabled>▶ Start</button>
-    <button class="btn btn-secondary hidden" id="resume-btn" disabled>↻ Resume</button>
-    <button class="btn btn-danger" id="stop-btn" disabled>⏹ Stop</button>
-  </div>
-  <div class="progress-section">
-    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-    <div class="progress-text" id="progress-text">0 / 0</div>
-  </div>
-  <div class="results-section" id="results"></div>
+  
   <script src="popup.js"></script>
 </body>
 </html>

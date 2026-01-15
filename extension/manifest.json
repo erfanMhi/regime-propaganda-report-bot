@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Instagram Report Bot",
-  "version": "1.0.0",
+  "name": "Report Bot",
+  "version": "2.0.0",
   "description": "Fight back against the Islamic regime's propaganda machine",
   "permissions": ["activeTab", "storage", "scripting", "tabs"],
-  "host_permissions": ["https://www.instagram.com/*"],
+  "host_permissions": ["https://www.instagram.com/*", "https://x.com/*", "https://twitter.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -19,5 +19,8 @@
     "128": "icons/icon128.png"
   },
   "background": {"service_worker": "background.js"},
-  "content_scripts": [{"matches": ["https://www.instagram.com/*"], "js": ["content.js"], "run_at": "document_idle"}]
+  "content_scripts": [
+    {"matches": ["https://www.instagram.com/*"], "js": ["content-instagram.js"], "run_at": "document_idle"},
+    {"matches": ["https://x.com/*", "https://twitter.com/*"], "js": ["content-twitter.js"], "run_at": "document_idle"}
+  ]
 }
