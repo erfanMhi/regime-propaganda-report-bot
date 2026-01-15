@@ -1,8 +1,8 @@
-# 🚨 Regime Propaganda Report Bot (`regime-propaganda-report-bot`)
+# 🚨 Regime Propaganda Report Bot
 
 **Report accounts connected to the Islamic regime propaganda machine.**
 
-**Why I made this:** Many anti-regime protesters have been wrongfully killed, and propaganda networks try to label them as “terrorists” instead of who they were. This tool helps people report those propaganda accounts more easily.
+**Why I made this:** Many anti-regime protesters have been wrongfully killed, and propaganda networks try to label them as "terrorists" instead of who they were. This tool helps people report those propaganda accounts more easily.
 
 [🇮🇷 فارسی](README.md)
 
@@ -10,40 +10,57 @@
 
 ## ⬇️ Download
 
-- **Best option**: [📦 Download from Releases](https://github.com/erfanMhi/regime-propaganda-report-bot/releases)
-- **Direct ZIP**: [⬇️ Download ZIP](https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip)
+[📦 Download ZIP](https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip)
 
 ---
 
-## ⚡ How to Run
+## ⚡ How to Install
 
-> ⚠️ **Before you start:** Make sure all Chrome windows are closed
+### Step 1: Download & Unzip
 
-### Step 1: Download & Run
+1. Click the download link above
+2. **Unzip** the downloaded file
+3. You'll see a folder called `extension` inside
 
-Download the project ZIP, **unzip** it, then run the launcher file! If Python or Chrome isn't installed, it will **automatically** open the download page for you.
+### Step 2: Install the Extension
 
-| Mac | Windows |
-|-----|---------|
-| Double-click `Start Bot.command` | Double-click `Start Bot.bat` |
+1. Open Chrome and go to `chrome://extensions`
+2. Enable **Developer mode** (toggle in top-right corner)
+3. Click **Load unpacked**
+4. Select the `extension` folder
+5. Done! You'll see the extension icon (green square) in your toolbar
 
-> **Mac users:** If you see "Apple could not verify", go to **System Settings → Privacy & Security → Open Anyway**
+---
 
-The launcher will ask you to quit Chrome if it's running (this is required to run Chrome in debug mode so the bot can control it), then open the bot interface automatically.
+## 🚀 How to Use
 
-### Step 2: Log into Instagram
+### Step 1: Log into Instagram
 
-In the Chrome window, go to instagram.com and login through entering your **username and password** *(only needed once - session is saved)*
+1. Open a new tab in Chrome
+2. Go to **instagram.com**
+3. Log in with your **username and password**
 
-### Step 3: Start Reporting
+### Step 2: Start the Bot
 
-Click **"Start"** in the bot interface - done!
+1. Click the **extension icon** in your toolbar (green square)
+2. The target list is already pre-filled with propaganda accounts
+3. Click **Start**
+4. The bot will automatically:
+   - Navigate to each profile
+   - Report them for "Violence / Calling for violence"
+   - Wait 15-25 seconds between profiles
+
+### Step 3: Let it Run
+
+Keep the Chrome window open. You can watch the progress in the extension popup.
+
+Click **Stop** anytime to pause.
 
 ---
 
 ## 📝 Adding Targets
 
-The list is **already pre-filled** with accounts we've found. You can add your own by editing `data/targets.txt` - one username per line (without @):
+Edit the text area in the extension popup. One username per line (without @):
 
 ```
 username1
@@ -67,11 +84,10 @@ That said, I've used this tool multiple times without any issues - the probabili
 
 | Problem | Solution |
 |---------|----------|
-| "Apple could not verify" (Mac) | System Settings → Privacy & Security → Open Anyway |
-| "Python not found" | Reinstall Python, check "Add to PATH" |
-| Bot won't start | Make sure Chrome is installed |
-| Permission denied (Mac) | Run: `chmod +x "Start Bot.command"` in Terminal |
+| "Instagram Tab: Not Found" | Open instagram.com in a tab first and make sure you're logged in |
+| Extension icon not visible | Click the puzzle icon in Chrome toolbar, pin the extension |
+| Report flow stops | Instagram UI may have changed, check for updates |
 
 ---
 
-**That's it!** 🎯
+**Fight back against the Islamic regime's tyranny** ✊
