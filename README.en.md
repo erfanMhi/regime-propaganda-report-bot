@@ -19,13 +19,21 @@
 
 Download the project ZIP, **unzip** it, then run the launcher file — if Python or Chrome isn't installed, it will **automatically** open the download page for you.
 
-### Step 2: Run the Bot
-
 | Mac | Windows |
 |-----|---------|
 | Double-click `Start Bot.command` | Double-click `Start Bot.bat` |
 
-A browser window will open with a simple interface. Follow the on-screen instructions.
+A browser window will open with the bot interface.
+
+### Step 2: Setup Chrome
+
+1. **Quit Chrome completely** first (Cmd+Q on Mac / close all windows on Windows)
+2. Click **"Launch Chrome"** in the bot interface
+3. **Log into Instagram** in the Chrome window that opens *(only needed once — session is saved)*
+
+### Step 3: Start Reporting
+
+Click **"Start"** in the bot interface — done!
 
 ---
 
