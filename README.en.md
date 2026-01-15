@@ -17,6 +17,8 @@
 
 ## ⚡ How to Run
 
+> ⚠️ **Before you start:** Make sure all Chrome windows are closed
+
 ### Step 1: Download & Run
 
 Download the project ZIP, **unzip** it, then run the launcher file! If Python or Chrome isn't installed, it will **automatically** open the download page for you.
