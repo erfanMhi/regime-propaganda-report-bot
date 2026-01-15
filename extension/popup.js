@@ -48,7 +48,8 @@ async function init() {
   $('targets').oninput = async () => await chrome.storage.local.set({ targets: $('targets').value });
   $('start-btn').onclick = start;
   $('stop-btn').onclick = stop;
-  chrome.runtime.onMessage.addListener(m => { if (m.type === 'STATUS_UPDATE') update(m.data) });
+  // Background sends STATUS_UPDATE without payload; re-read state from storage.
+  chrome.runtime.onMessage.addListener(m => { if (m.type === 'STATUS_UPDATE') check() });
   setInterval(check, 1000);
   check();
 }
@@ -73,10 +74,11 @@ async function check() {
 }
 
 function update(s) {
-  const running = s.isRunning || false;
-  const idx = s.currentIndex || 0;
-  const total = s.totalTargets || 0;
-  const results = s.results || [];
+  const safe = s || {};
+  const running = safe.isRunning || false;
+  const idx = safe.currentIndex || 0;
+  const total = safe.totalTargets || 0;
+  const results = safe.results || [];
   
   $('bot-status').textContent = running ? 'Running...' : 'Idle';
   $('bot-status').className = 'status-value ' + (running ? 'running' : 'ready');
