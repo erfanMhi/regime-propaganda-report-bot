@@ -2,6 +2,8 @@
 
 **Report accounts connected to the Islamic regime propaganda machine.**
 
+**Why I made this:** Many anti-regime protesters have been wrongfully killed, and propaganda networks try to label them as “terrorists” instead of who they were. This tool helps people report those propaganda accounts more easily.
+
 [🇮🇷 فارسی](README.md)
 
 ---
@@ -17,7 +19,7 @@
 
 ### Step 1: Download & Run
 
-Download the project ZIP, **unzip** it, then run the launcher file - if Python or Chrome isn't installed, it will **automatically** open the download page for you.
+Download the project ZIP, **unzip** it, then run the launcher file! If Python or Chrome isn't installed, it will **automatically** open the download page for you.
 
 | Mac | Windows |
 |-----|---------|
