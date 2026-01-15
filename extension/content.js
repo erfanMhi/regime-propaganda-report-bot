@@ -80,22 +80,18 @@ async function doReport(username) {
     }
     await sleep(1000);
     
-    // Step 5: Click Violence option
-    console.log('[ReportBot] Step 5: Click Violence option');
-    if (!await clickViolenceOption()) {
-      console.log('[ReportBot] Could not find Violence option');
+    // Step 5: Click False Information
+    console.log('[ReportBot] Step 5: Click False Information');
+    if (!await clickFalseInformation()) {
+      console.log('[ReportBot] Could not find False Information option');
       await closeDialogs();
-      return { success: false, error: 'No Violence option' };
+      return { success: false, error: 'No False Information option' };
     }
     await sleep(1000);
     
-    // Step 6: Click Calling for Violence
-    console.log('[ReportBot] Step 6: Click Calling for Violence');
-    if (!await clickCallingForViolence()) {
-      console.log('[ReportBot] Could not find Calling for Violence option');
-      await closeDialogs();
-      return { success: false, error: 'No Calling for Violence' };
-    }
+    // Step 6: Click any sub-option if present (e.g., "Health", "Politics", etc.)
+    console.log('[ReportBot] Step 6: Click sub-option if present');
+    await clickFirstListOption();
     await sleep(1000);
     
     // Step 7: Click Submit (if present)
@@ -198,25 +194,29 @@ async function clickPostingContent() {
   ]);
 }
 
-async function clickViolenceOption() {
+async function clickFalseInformation() {
   return await clickButtonByText([
-    'Violence, hate or exploitation',
-    'Violence',
-    'hate or exploitation'
+    'False information',
+    'false information',
+    'Misinformation'
   ]);
 }
 
-async function clickCallingForViolence() {
-  return await clickButtonByText([
-    'Calling for violence',
-    'violence'
-  ]);
+async function clickFirstListOption() {
+  // Click first available option in a list (for sub-categories)
+  const listButtons = document.querySelectorAll('[role="list"] button');
+  if (listButtons.length > 0) {
+    listButtons[0].click();
+    return true;
+  }
+  return false;
 }
 
 async function clickSubmit() {
   return await clickButtonByText([
     'Submit',
-    'Submit report'
+    'Submit report',
+    'Done'
   ]);
 }
 
