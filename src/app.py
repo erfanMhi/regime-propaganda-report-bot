@@ -272,7 +272,7 @@ class BotHandler(SimpleHTTPRequestHandler):
             elif is_chrome_running():
                 # Chrome is running but debug port not available - need to quit Chrome
                 quit_hint = "Cmd+Q" if platform.system() == "Darwin" else "close all Chrome windows"
-                self.send_json({"error": f"Chrome is running but not in debug mode. Please: 1) Open this page in Safari or another browser, 2) Quit Chrome ({quit_hint}), 3) Click 'Launch Chrome' again."})
+                self.send_json({"error": f"Chrome is running but not in debug mode. Please quit Chrome ({quit_hint}) and click 'Launch Chrome' again."})
             else:
                 self.send_json({"error": message})
         
@@ -719,8 +719,8 @@ HTML_PAGE = '''<!DOCTYPE html>
         <div id="chrome-warning" class="warning-card" style="display: none;">
             <p data-en="⚠️ Chrome is not ready" data-fa="⚠️ کروم آماده نیست">⚠️ Chrome is not ready</p>
             <button class="btn btn-primary" onclick="launchChrome()" data-en="Launch Chrome" data-fa="اجرای کروم">Launch Chrome</button>
-            <p class="hint" id="chrome-hint" data-en="Tip: If it fails, open this page in Safari, quit Chrome, then try again" data-fa="نکته: اگر کار نکرد، این صفحه را در سافاری باز کنید، کروم را ببندید، دوباره امتحان کنید">
-                Tip: If it fails, open this page in Safari, quit Chrome, then try again
+            <p class="hint" id="chrome-hint" data-en="Quit Chrome first if it's already open" data-fa="اگر کروم باز است، اول آن را ببندید">
+                Quit Chrome first if it's already open
             </p>
         </div>
         
