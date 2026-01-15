@@ -257,16 +257,24 @@ class BotHandler(SimpleHTTPRequestHandler):
     
     def do_POST(self):
         if self.path == "/api/launch-chrome":
-            if is_chrome_running():
-                quit_hint = "Cmd+Q" if platform.system() == "Darwin" else "close Chrome windows"
-                self.send_json({"error": f"Chrome is running. Please quit Chrome ({quit_hint}) first."})
+            # If debug Chrome is already running, we're good
+            if check_chrome_ready():
+                self.send_json({"success": True, "message": "Chrome debug mode already active"})
+                return
+            
+            # Try to launch debug Chrome (even if normal Chrome is running)
+            success, message = launch_chrome_debug()
+            time.sleep(3)
+            
+            # Check if debug port is now available
+            if check_chrome_ready():
+                self.send_json({"success": True})
+            elif is_chrome_running():
+                # Chrome is running but debug port not available - need to quit Chrome
+                quit_hint = "Cmd+Q" if platform.system() == "Darwin" else "close all Chrome windows"
+                self.send_json({"error": f"Chrome is running but not in debug mode. Please: 1) Open this page in Safari or another browser, 2) Quit Chrome ({quit_hint}), 3) Click 'Launch Chrome' again."})
             else:
-                success, message = launch_chrome_debug()
-                time.sleep(2)
-                if success:
-                    self.send_json({"success": True})
-                else:
-                    self.send_json({"error": message})
+                self.send_json({"error": message})
         
         elif self.path == "/api/start":
             if not bot_state["running"]:
@@ -711,8 +719,8 @@ HTML_PAGE = '''<!DOCTYPE html>
         <div id="chrome-warning" class="warning-card" style="display: none;">
             <p data-en="⚠️ Chrome is not ready" data-fa="⚠️ کروم آماده نیست">⚠️ Chrome is not ready</p>
             <button class="btn btn-primary" onclick="launchChrome()" data-en="Launch Chrome" data-fa="اجرای کروم">Launch Chrome</button>
-            <p class="hint" id="chrome-hint" data-en="If Chrome is open, please quit it first" data-fa="اگر کروم باز است، لطفا اول آن را ببندید">
-                If Chrome is open, please quit it first
+            <p class="hint" id="chrome-hint" data-en="Tip: If it fails, open this page in Safari, quit Chrome, then try again" data-fa="نکته: اگر کار نکرد، این صفحه را در سافاری باز کنید، کروم را ببندید، دوباره امتحان کنید">
+                Tip: If it fails, open this page in Safari, quit Chrome, then try again
             </p>
         </div>
         
