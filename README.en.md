@@ -29,7 +29,7 @@ The launcher will ask you to quit Chrome if it's running (this is required to ru
 
 ### Step 2: Log into Instagram
 
-In the Chrome window, enter your **username and password** to log into Instagram *(only needed once - session is saved)*
+In the Chrome window, go to instagram.com and login through entering your **username and password** *(only needed once - session is saved)*
 
 ### Step 3: Start Reporting
 
