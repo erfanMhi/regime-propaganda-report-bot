@@ -1,10 +1,14 @@
+<div align="center">
+
+**🇬🇧 English** | **[🇮🇷 فارسی](README.md)**
+
+</div>
+
 # 🚨 Regime Propaganda Report Bot
 
 **Report accounts connected to the Islamic regime propaganda machine.**
 
 **Why?** Many anti-regime protesters have been wrongfully killed. Propaganda networks label them "terrorists" instead of the heroes they were. This tool helps report those accounts more easily.
-
-[🇮🇷 فارسی](README.md)
 
 ---
 

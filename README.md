@@ -1,3 +1,9 @@
+<div align="center">
+
+**[🇬🇧 English](README.en.md)** | **🇮🇷 فارسی**
+
+</div>
+
 <div dir="rtl">
 
 # 🚨 ربات گزارش پروپاگاندا رژیم
