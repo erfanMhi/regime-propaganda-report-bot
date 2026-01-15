@@ -1,5 +1,8 @@
 #!/bin/bash
-cd "$(dirname "$0")"
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT_DIR"
 
 # Check if Chrome debug port is available
 if ! curl -s http://127.0.0.1:9222/json/version > /dev/null 2>&1; then
@@ -7,9 +10,9 @@ if ! curl -s http://127.0.0.1:9222/json/version > /dev/null 2>&1; then
     echo ""
     echo "Please run these steps:"
     echo "  1. Quit Chrome completely (Cmd+Q)"
-    echo "  2. Run: ./start_chrome.sh"
+    echo "  2. Run: ./src/scripts/start_chrome.sh"
     echo "  3. Log into Instagram if prompted"
-    echo "  4. Run: ./run_bot.sh"
+    echo "  4. Run: ./src/scripts/run_bot.sh"
     exit 1
 fi
 
@@ -23,8 +26,8 @@ source venv/bin/activate
 
 # Install Requirements
 echo "Checking dependencies..."
-pip install -q -r requirements.txt 2>/dev/null
+python -m pip install -r requirements.txt
 
 # Run Bot
 echo ""
-python bot.py
+python src/bot.py

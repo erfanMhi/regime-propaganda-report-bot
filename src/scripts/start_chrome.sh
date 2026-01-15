@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 DEBUG_PROFILE_DIR="$HOME/.chrome_reporting_bot_profile"
 
@@ -45,7 +46,7 @@ if curl -s http://127.0.0.1:9222/json/version > /dev/null 2>&1; then
         echo "Chrome is ready. If you're not logged in, please log in now."
     fi
     echo ""
-    echo "Once logged in, run: ./run_bot.sh"
+    echo "Once logged in, run: ./src/scripts/run_bot.sh"
 else
     echo ""
     echo "ERROR: Could not verify Chrome debugging port."
