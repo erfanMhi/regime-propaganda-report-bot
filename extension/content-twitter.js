@@ -68,6 +68,11 @@ async function doReport(username) {
       await closeDialogs();
       return { success: false, error: 'No Hate option' };
     }
+    await sleep(500);
+    
+    // Step 3b: Click Next to proceed to sub-options
+    console.log('[ReportBot Twitter] Step 3b: Click Next after Hate');
+    await clickNextButton();
     await sleep(1000);
     
     // Step 4: Click "Dehumanization" option
@@ -79,10 +84,17 @@ async function doReport(username) {
     }
     await sleep(1000);
     
-    // Step 5: Click Submit/Next button if present
+    // Step 5: Click Submit button (ChoiceSelectionNextButton)
     console.log('[ReportBot Twitter] Step 5: Click Submit');
-    await clickSubmit();
+    if (!await clickSubmit()) {
+      console.log('[ReportBot Twitter] Could not find Submit button, trying alternatives');
+    }
     await sleep(1500);
+    
+    // Step 6: Click any additional confirmation buttons
+    console.log('[ReportBot Twitter] Step 6: Click any confirmation');
+    await clickNextButton();
+    await sleep(1000);
     
     // Close any remaining dialogs
     await closeDialogs();
@@ -184,9 +196,6 @@ async function clickRadioOptionByText(texts) {
         }
         label.click();
         await sleep(300);
-        
-        // Also try to click Next/Submit button after selecting
-        await clickNextButton();
         return true;
       }
     }
@@ -200,7 +209,6 @@ async function clickRadioOptionByText(texts) {
       if (elText === text.toLowerCase() || elText.startsWith(text.toLowerCase())) {
         el.click();
         await sleep(300);
-        await clickNextButton();
         return true;
       }
     }
@@ -210,7 +218,14 @@ async function clickRadioOptionByText(texts) {
 }
 
 async function clickNextButton() {
-  // Look for Next, Submit, or Continue button
+  // First try the specific data-testid for Twitter's choice selection button
+  const choiceButton = document.querySelector('[data-testid="ChoiceSelectionNextButton"]');
+  if (choiceButton) {
+    choiceButton.click();
+    return true;
+  }
+  
+  // Look for Next, Submit, or Continue button by text
   const buttonTexts = ['Next', 'Submit', 'Continue', 'Done'];
   const buttons = document.querySelectorAll('button, [role="button"]');
   
@@ -227,6 +242,14 @@ async function clickNextButton() {
 }
 
 async function clickSubmit() {
+  // First try the specific Submit button with data-testid
+  const submitButton = document.querySelector('[data-testid="ChoiceSelectionNextButton"]');
+  if (submitButton) {
+    submitButton.click();
+    return true;
+  }
+  
+  // Fallback to generic next button
   return await clickNextButton();
 }
 
