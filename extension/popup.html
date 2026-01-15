@@ -14,18 +14,18 @@
     .status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
     .status-label{color:#555;font-size:12px;font-weight:500}
     .status-value{font-weight:700;font-size:12px}
-    .ready{color:#22c55e}.not-ready{color:#dc2626}.running{color:#22c55e}
+    .ready{color:#22c55e}.not-ready{color:#dc2626}.running{color:#22c55e}.paused{color:#f59e0b}
     .targets-section{margin-bottom:12px}
     .targets-section h3{font-size:12px;color:#555;margin-bottom:8px;font-weight:600}
     .targets-input{width:100%;height:120px;background:#fff;border:2px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-family:monospace;font-size:11px;padding:8px;resize:none}
     .targets-input:focus{outline:none;border-color:#22c55e}
     .targets-input::placeholder{color:#999}
-    .actions{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-    .btn{flex:1;min-width:100px;padding:12px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px}
+    .actions{display:flex;gap:6px;margin-bottom:12px}
+    .btn{flex:1;padding:10px 8px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
     .btn:disabled{opacity:0.4;cursor:not-allowed}
     .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
     .btn-primary{background:#22c55e;color:#fff}
-    .btn-secondary{background:#fff;color:#22c55e;border:2px solid #22c55e}
+    .btn-secondary{background:#fff;color:#22c55e;border:2px solid #22c55e;padding:8px 6px}
     .btn-danger{background:#dc2626;color:#fff}
     .btn.hidden{display:none}
     .progress-section{margin-bottom:12px}
@@ -62,9 +62,9 @@
     <textarea class="targets-input" id="targets" placeholder="username1&#10;username2&#10;username3"></textarea>
   </div>
   <div class="actions">
-    <button class="btn btn-primary" id="start-btn" disabled><span>▶</span> Start</button>
-    <button class="btn btn-secondary hidden" id="resume-btn" disabled><span>↻</span> Resume</button>
-    <button class="btn btn-danger" id="stop-btn" disabled><span>⏹</span> Stop</button>
+    <button class="btn btn-primary" id="start-btn" disabled>▶ Start</button>
+    <button class="btn btn-secondary hidden" id="resume-btn" disabled>↻ Resume</button>
+    <button class="btn btn-danger" id="stop-btn" disabled>⏹ Stop</button>
   </div>
   <div class="progress-section">
     <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>

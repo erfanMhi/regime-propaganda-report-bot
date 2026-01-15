@@ -83,7 +83,7 @@ function update(s) {
   const hasProgress = idx > 0 && idx < total && !running;
   
   $('bot-status').textContent = running ? 'Running...' : (hasProgress ? 'Paused' : 'Idle');
-  $('bot-status').className = 'status-value ' + (running ? 'running' : 'ready');
+  $('bot-status').className = 'status-value ' + (running ? 'running' : (hasProgress ? 'paused' : 'ready'));
   
   // Button states
   $('start-btn').disabled = running || !tabId;
