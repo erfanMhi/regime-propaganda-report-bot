@@ -1,37 +1,37 @@
-# 🚨 Regime Propaganda Report Bot (`regime-propaganda-report-bot`)
+<div dir="rtl">
 
-**Report accounts connected to the Islamic regime propaganda machine.**
+# 🚨 ربات گزارش ماشین پروپاگاندا رژیم (`regime-propaganda-report-bot`)
 
-[🇮🇷 فارسی](README.fa.md)
-
----
-
-## ⬇️ Download
-
-- **Best option**: Download the latest ZIP from **GitHub Releases**: `https://github.com/erfanMhi/regime-propaganda-report-bot/releases`
-- **Direct ZIP** (if you prefer): `https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip`
+**کمک به گزارش حساب‌های مرتبط با ماشین پروپاگاندا جمهوری اسلامی.**
 
 ---
 
-## ⚡ Quick Start
+## ⬇️ دانلود
 
-### Step 1: Download & Run
+- **بهترین گزینه**: دانلود ZIP آخرین نسخه از بخش **Releases** گیت‌هاب: `https://github.com/erfanMhi/regime-propaganda-report-bot/releases`
+- **ZIP مستقیم** (اگر خواستید): `https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip`
 
-Download the project ZIP, **unzip** it, then run the launcher file — if Python or Chrome isn't installed, it will **automatically** open the download page for you.
+---
 
-### Step 2: Run the Bot
+## ⚡ شروع سریع
 
-| Mac | Windows |
+### مرحله ۱: نصب پایتون و کروم
+
+فایل ZIP پروژه را دانلود کنید، **از حالت فشرده خارج کنید**، سپس فایل اجرا را باز کنید — اگر پایتون یا کروم نصب نباشد، **خودکار** صفحه دانلود باز می‌شود.
+
+### مرحله ۲: اجرای ربات
+
+| مک | ویندوز |
 |-----|---------|
-| Double-click `Start Bot.command` | Double-click `Start Bot.bat` |
+| دابل کلیک روی `Start Bot.command` | دابل کلیک روی `Start Bot.bat` |
 
-A browser window will open with a simple interface. Follow the on-screen instructions.
+یک پنجره مرورگر با رابط کاربری ساده باز می‌شود. دستورالعمل‌های روی صفحه را دنبال کنید.
 
 ---
 
-## 📝 Adding Targets
+## 📝 اضافه کردن اهداف
 
-Edit `targets.txt` — one username per line (without @):
+فایل `targets.txt` را ویرایش کنید — هر نام کاربری در یک خط (بدون @):
 
 ```
 username1
@@ -41,14 +41,20 @@ username3
 
 ---
 
-## ❓ Troubleshooting
+## ❓ رفع مشکلات
 
-| Problem | Solution |
+| مشکل | راه حل |
 |---------|----------|
-| "Python not found" | Reinstall Python, check "Add to PATH" |
-| Bot won't start | Make sure Chrome is installed |
-| Permission denied (Mac) | Run: `chmod +x "Start Bot.command"` in Terminal |
+| "Python not found" | پایتون را دوباره نصب کنید، گزینه "Add to PATH" را تیک بزنید |
+| ربات اجرا نمی‌شود | مطمئن شوید کروم نصب است |
+| Permission denied (مک) | در ترمینال اجرا کنید: `chmod +x "Start Bot.command"` |
 
 ---
 
-**That's it!** 🎯
+**همین!** 🎯
+
+</div>
+
+---
+
+[🇬🇧 English](README.en.md)
