@@ -56,4 +56,4 @@ if [ $? -ne 0 ]; then
 fi
 
 # Run the app
-python app.py
+python src/app.py

@@ -221,7 +221,7 @@ def launch_chrome_debug() -> tuple[bool, str]:
 
 def load_targets():
     """Load targets from file."""
-    targets_file = SCRIPT_DIR / "targets.txt"
+    targets_file = SCRIPT_DIR.parent / "data" / "targets.txt"
     if targets_file.exists():
         with open(targets_file, 'r') as f:
             return [line.strip() for line in f if line.strip()]

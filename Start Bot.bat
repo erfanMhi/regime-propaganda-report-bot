@@ -61,6 +61,6 @@ if errorlevel 1 (
 )
 
 REM Run the app
-python app.py
+python src\app.py
 
 pause

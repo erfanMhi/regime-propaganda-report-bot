@@ -31,7 +31,7 @@ A browser window will open with a simple interface. Follow the on-screen instruc
 
 ## 📝 Adding Targets
 
-Edit `targets.txt` — one username per line (without @):
+Edit `data/targets.txt` — one username per line (without @):
 
 ```
 username1

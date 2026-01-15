@@ -512,7 +512,7 @@ def load_targets(filepath: str) -> List[str]:
 def main() -> None:
     """Main entry point."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    targets_file = os.path.join(script_dir, "targets.txt")
+    targets_file = os.path.join(script_dir, "..", "data", "targets.txt")
 
     targets = load_targets(targets_file)
     if not targets:
