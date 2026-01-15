@@ -365,7 +365,7 @@ HTML_PAGE = '''<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>For Iran - Report Bot</title>
+    <title>Fight Back - Report Bot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -680,7 +680,7 @@ HTML_PAGE = '''<!DOCTYPE html>
         
         <div class="memorial">
             <div class="memorial-icon">✊</div>
-            <h2 id="memorial-title">Fight Back Against Tyranny</h2>
+            <h2 id="memorial-title">Fight back against the Islamic regime's tyranny</h2>
             <p id="memorial-text">
                 The Islamic regime has killed over <span class="highlight">12,000 protesters</span>, 
                 possibly as many as <span class="highlight">20,000</span>, and detained tens of thousands more 
@@ -736,7 +736,7 @@ HTML_PAGE = '''<!DOCTYPE html>
         <div class="results-list" id="results"></div>
         
         <div class="footer">
-            <p>Made with <span>♥</span> for Iran</p>
+            <p id="footer-text">Fight back against the Islamic regime's tyranny</p>
         </div>
     </div>
     
@@ -746,11 +746,12 @@ HTML_PAGE = '''<!DOCTYPE html>
         
         const translations = {
             en: {
-                memorialTitle: "Fight Back Against Tyranny",
+                memorialTitle: "Fight back against the Islamic regime's tyranny",
                 memorialText: 'The Islamic regime has killed over <span class="highlight">12,000 protesters</span>, possibly as many as <span class="highlight">20,000</span>, and detained tens of thousands more for demanding basic human rights. They cut off internet and phone lines to hide their massacre. They took our friends, our family, our loved ones. This tool is our resistance: dismantling their propaganda machine, one report at a time.',
                 memorialSource: "Sources: CBS News, Iran International, Iran Human Rights",
                 mainTitle: "Report Bot",
                 mainSubtitle: "Automated Instagram Reporting Tool",
+                footerText: "Fight back against the Islamic regime's tyranny",
                 langBtn: "فارسی",
                 reported: "Reported",
                 notFound: "Profile not found", 
@@ -762,11 +763,12 @@ HTML_PAGE = '''<!DOCTYPE html>
                 checking: "Checking..."
             },
             fa: {
-                memorialTitle: "مبارزه با استبداد",
+                memorialTitle: "مبارزه با استبداد رژیم اسلامی",
                 memorialText: 'رژیم اسلامی بیش از <span class="highlight">۱۲٬۰۰۰ معترض</span>، شاید تا <span class="highlight">۲۰٬۰۰۰ نفر</span>، را کشته و ده‌ها هزار نفر را به خاطر خواستن حقوق اولیه انسانی بازداشت کرده است. آنها اینترنت و تلفن را قطع کردند تا قتل عام خود را پنهان کنند. آنها دوستان، خانواده و عزیزان ما را از ما گرفتند. این ابزار مقاومت ماست: نابودی ماشین تبلیغاتی آنها، گزارش به گزارش.',
                 memorialSource: "منابع: سی‌بی‌اس نیوز، ایران اینترنشنال، سازمان حقوق بشر ایران",
                 mainTitle: "ربات گزارش",
                 mainSubtitle: "ابزار خودکار گزارش اینستاگرام",
+                footerText: "مبارزه با استبداد رژیم اسلامی",
                 langBtn: "English",
                 reported: "گزارش شد",
                 notFound: "پروفایل یافت نشد",
@@ -790,6 +792,7 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('main-title').textContent = t.mainTitle;
             document.getElementById('main-subtitle').textContent = t.mainSubtitle;
             document.getElementById('lang-btn').textContent = t.langBtn;
+            document.getElementById('footer-text').textContent = t.footerText;
             
             // Update data-* elements
             document.querySelectorAll('[data-en]').forEach(el => {
