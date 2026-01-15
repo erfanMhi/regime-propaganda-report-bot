@@ -39,8 +39,58 @@ saayebanoo
 ali.zahraei.110
 mojtaba.azhdari81`;
 
-// Default targets for Twitter (add your targets here)
-const DEFAULT_TW_TARGETS = ``;
+// Default targets for Twitter - from Islamic Republic Influence Networks dataset
+// Source: https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks
+const DEFAULT_TW_TARGETS = `ramalokot
+DASKAVI
+BillWard60
+katalin_pota
+MerryMichaelW
+Miranineves
+4091973481124
+luluonti
+Hashiim1957
+Noureddine9308
+fxromanfer
+Arcange52536129
+shanprevails
+clanofAlph
+agski48
+eumateus75
+AtefehKhanoom
+hajiaba_
+Salanahareru
+purada0412
+ShreoshiB
+SpiralOpen999
+manuhellt
+Rafaelltz69
+abdo22jafar
+MelgerTina
+A_Aljermozi0
+JEez_Pz
+DonJoschi
+carisimolider
+Clarembaldo
+thug_boiiii
+Reza34473488
+KidMuddywater
+renzo91193576
+cricketfanshow
+JawadHaider
+queenoffthedark
+ravi2010mary
+Arif74890482
+aboahmed735733
+akiba6895
+msolymani13
+aburukn2021
+OlivierRimmel
+Ali2musa
+PipeMor73266342
+AliAmir57180876
+BRANDPLUS
+Tara15482537174`;
 
 const $ = id => document.getElementById(id);
 let igTabId = null;
