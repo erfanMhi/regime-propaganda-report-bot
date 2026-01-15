@@ -2,7 +2,7 @@
 
 **Report accounts connected to the Islamic regime propaganda machine.**
 
-**Why I made this:** Many anti-regime protesters have been wrongfully killed, and propaganda networks try to label them as "terrorists" instead of who they were. This tool helps people report those propaganda accounts more easily.
+**Why?** Many anti-regime protesters have been wrongfully killed. Propaganda networks label them "terrorists" instead of the heroes they were. This tool helps report those accounts more easily.
 
 [🇮🇷 فارسی](README.md)
 
@@ -10,25 +10,31 @@
 
 ## ⬇️ Download
 
-[📦 Download ZIP](https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip)
+**[📦 Download ZIP](https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip)**
+
+**Works on:** Chrome, Edge, Brave (any Chromium browser) — Windows, Mac, Linux
 
 ---
 
-## ⚡ How to Install
+## ⚡ Installation (2 minutes)
 
-### Step 1: Download & Unzip
+### Step 1: Download & Extract
 
-1. Click the download link above
-2. **Unzip** the downloaded file
-3. You'll see a folder called `extension` inside
+1. Click **Download ZIP** above
+2. Extract/unzip the downloaded file
+3. Inside you'll find a folder named `extension`
 
-### Step 2: Install the Extension
+### Step 2: Load the Extension
 
-1. Open Chrome and go to `chrome://extensions`
-2. Enable **Developer mode** (toggle in top-right corner)
-3. Click **Load unpacked**
-4. Select the `extension` folder
-5. Done! You'll see the extension icon (green square) in your toolbar
+1. Open Chrome and type in the address bar: `chrome://extensions`
+2. Turn on **Developer mode** (toggle switch in the top-right corner)
+3. Click the **Load unpacked** button (top-left)
+4. Navigate to and select the `extension` folder
+5. Click **Select Folder**
+
+✅ Done! The extension is now installed.
+
+> **Can't see the icon?** Click the puzzle piece 🧩 in Chrome's toolbar, then click the pin 📌 next to "Instagram Report Bot"
 
 ---
 
@@ -36,31 +42,29 @@
 
 ### Step 1: Log into Instagram
 
-1. Open a new tab in Chrome
+1. Open a new tab
 2. Go to **instagram.com**
-3. Log in with your **username and password**
+3. Log in with your username and password
 
-### Step 2: Start the Bot
+### Step 2: Start Reporting
 
-1. Click the **extension icon** in your toolbar (green square)
-2. The target list is already pre-filled with propaganda accounts
-3. Click **Start**
-4. The bot will automatically:
-   - Navigate to each profile
-   - Report them for "Violence / Calling for violence"
-   - Wait 15-25 seconds between profiles
+1. Click the **extension icon** in your toolbar
+2. You'll see a list of propaganda accounts (pre-filled)
+3. Click the green **Start** button
+4. Watch as the bot:
+   - Opens each profile
+   - Reports them for "Violence / Calling for violence"
+   - Waits 15-25 seconds between reports
 
-### Step 3: Let it Run
+### Step 3: Done!
 
-Keep the Chrome window open. You can watch the progress in the extension popup.
-
-Click **Stop** anytime to pause.
+Keep Chrome open while it runs. Click **Stop** anytime to pause.
 
 ---
 
-## 📝 Adding Targets
+## 📝 Adding More Targets
 
-Edit the text area in the extension popup. One username per line (without @):
+In the extension popup, edit the text box. Add usernames (one per line, without @):
 
 ```
 username1
@@ -68,15 +72,15 @@ username2
 username3
 ```
 
-**Have a big list?** Make a pull request and we'll add them!
+**Have a big list?** Submit a pull request!
 
 ---
 
 ## ⚠️ Caution
 
-Using bots on Instagram **may result in a temporary ban** on your account. Use at your own risk.
+Using automation on Instagram **may result in a temporary restriction**. Use at your own risk.
 
-That said, I've used this tool multiple times without any issues - the probability seems pretty low.
+I've personally used this multiple times without issues — the risk seems low.
 
 ---
 
@@ -84,10 +88,11 @@ That said, I've used this tool multiple times without any issues - the probabili
 
 | Problem | Solution |
 |---------|----------|
-| "Instagram Tab: Not Found" | Open instagram.com in a tab first and make sure you're logged in |
-| Extension icon not visible | Click the puzzle icon in Chrome toolbar, pin the extension |
-| Report flow stops | Instagram UI may have changed, check for updates |
+| "Instagram Tab: Not Found" | Make sure instagram.com is open in a tab and you're logged in |
+| Can't see extension icon | Click the puzzle 🧩 icon → Pin the extension |
+| Reporting stops mid-way | Instagram's UI may have changed — check for updates |
+| Nothing happens when clicking Start | Refresh the Instagram tab and try again |
 
 ---
 
-**Fight back against the Islamic regime's tyranny** ✊
+**Fight back against tyranny** ✊
