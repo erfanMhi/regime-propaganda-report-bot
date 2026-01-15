@@ -25,11 +25,11 @@ Download the project ZIP, **unzip** it, then run the launcher file! If Python or
 |-----|---------|
 | Double-click `Start Bot.command` | Double-click `Start Bot.bat` |
 
-The launcher will ask you to quit Chrome if it's running, then open the bot interface automatically.
+The launcher will ask you to quit Chrome if it's running (this is required to run Chrome in debug mode so the bot can control it), then open the bot interface automatically.
 
 ### Step 2: Log into Instagram
 
-**Log into Instagram** in the Chrome window *(only needed once - session is saved)*
+In the Chrome window, enter your **username and password** to log into Instagram *(only needed once - session is saved)*
 
 ### Step 3: Start Reporting
 
