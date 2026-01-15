@@ -8,8 +8,8 @@
 
 ## ⬇️ دانلود
 
-- **بهترین گزینه**: دانلود ZIP آخرین نسخه از بخش **Releases** گیت‌هاب: `https://github.com/erfanMhi/regime-propaganda-report-bot/releases`
-- **ZIP مستقیم** (اگر خواستید): `https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip`
+- **بهترین گزینه**: [📦 دانلود از Releases](https://github.com/erfanMhi/regime-propaganda-report-bot/releases)
+- **ZIP مستقیم**: [⬇️ دانلود ZIP](https://github.com/erfanMhi/regime-propaganda-report-bot/archive/refs/heads/main.zip)
 
 ---
 
