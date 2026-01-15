@@ -43,7 +43,7 @@ if [ ! -d "venv" ]; then
 fi
 
 source venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -q -r requirements.txt
 if [ $? -ne 0 ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -55,5 +55,39 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Run the app
-python src/app.py
+# Quit Chrome if running (required for debug mode)
+if pgrep -x "Google Chrome" > /dev/null; then
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  ⚠️  Chrome is running!"
+    echo "  The bot needs to launch Chrome in a special mode."
+    echo "  Please quit Chrome (Cmd+Q) and press any key to continue..."
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    read -n 1
+    
+    # Check again
+    if pgrep -x "Google Chrome" > /dev/null; then
+        echo "Chrome is still running. Please quit it completely."
+        read -n 1
+        exit 1
+    fi
+fi
+
+# Launch Chrome in debug mode with the bot UI
+PROFILE_DIR="$HOME/.chrome_reporting_bot_profile"
+mkdir -p "$PROFILE_DIR"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  🚀 Launching Chrome in debug mode..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --remote-debugging-port=9222 \
+    --user-data-dir="$PROFILE_DIR" \
+    "http://localhost:5555" \
+    2>/dev/null &
+
+# Give Chrome a moment to start
+sleep 2
+
+# Run the app (don't auto-open browser since Chrome already has the URL)
+SKIP_BROWSER_OPEN=1 python src/app.py

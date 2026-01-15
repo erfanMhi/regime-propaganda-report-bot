@@ -914,11 +914,12 @@ def main():
         sys.exit(1)
     
     print(f"Starting server at http://localhost:{PORT}")
-    print("Opening browser...")
     print("\nPress Ctrl+C to stop\n")
     
-    # Open browser after short delay
-    threading.Timer(1.5, lambda: webbrowser.open(f"http://localhost:{PORT}")).start()
+    # Open browser after short delay (unless launcher already opened it)
+    if not os.environ.get("SKIP_BROWSER_OPEN"):
+        print("Opening browser...")
+        threading.Timer(1.5, lambda: webbrowser.open(f"http://localhost:{PORT}")).start()
     
     # Start server
     try:
