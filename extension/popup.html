@@ -5,196 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instagram Report Bot</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: #fff;
-      width: 360px;
-      min-height: 400px;
-      padding: 16px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .header h1 {
-      font-size: 18px;
-      margin-bottom: 4px;
-      color: #22c55e;
-    }
-    
-    .header p {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-    }
-    
-    .status-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-    }
-    
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-    }
-    
-    .status-label {
-      color: rgba(255,255,255,0.6);
-      font-size: 12px;
-    }
-    
-    .status-value {
-      font-weight: 600;
-      font-size: 12px;
-    }
-    
-    .status-value.ready { color: #22c55e; }
-    .status-value.not-ready { color: #ef4444; }
-    .status-value.running { color: #f59e0b; }
-    
-    .targets-section {
-      margin-bottom: 12px;
-    }
-    
-    .targets-section h3 {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 8px;
-    }
-    
-    .targets-input {
-      width: 100%;
-      height: 120px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 6px;
-      color: #fff;
-      font-family: monospace;
-      font-size: 11px;
-      padding: 8px;
-      resize: none;
-    }
-    
-    .targets-input:focus {
-      outline: none;
-      border-color: #22c55e;
-    }
-    
-    .targets-input::placeholder {
-      color: rgba(255,255,255,0.3);
-    }
-    
-    .actions {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    
-    .btn {
-      flex: 1;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: opacity 0.2s;
-    }
-    
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .btn-primary {
-      background: #22c55e;
-      color: #000;
-    }
-    
-    .btn-danger {
-      background: #ef4444;
-      color: #fff;
-    }
-    
-    .progress-section {
-      margin-bottom: 12px;
-    }
-    
-    .progress-bar {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      background: #22c55e;
-      width: 0%;
-      transition: width 0.3s;
-    }
-    
-    .progress-text {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      text-align: center;
-      margin-top: 4px;
-    }
-    
-    .results-section {
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    
-    .result-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 8px;
-      font-size: 11px;
-      border-radius: 4px;
-      margin-bottom: 4px;
-    }
-    
-    .result-item.success { background: rgba(34,197,94,0.2); }
-    .result-item.failed { background: rgba(239,68,68,0.2); }
-    .result-item.skipped { background: rgba(156,163,175,0.2); }
-    .result-item.processing { background: rgba(245,158,11,0.2); }
-    
-    .result-username {
-      font-weight: 500;
-    }
-    
-    .result-status {
-      color: rgba(255,255,255,0.6);
-    }
-    
-    .warning {
-      background: rgba(245,158,11,0.1);
-      border: 1px solid rgba(245,158,11,0.3);
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 11px;
-      color: #f59e0b;
-      text-align: center;
-      margin-bottom: 12px;
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;width:360px;min-height:400px;padding:16px}
+    .header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)}
+    .header h1{font-size:18px;margin-bottom:4px;color:#22c55e}
+    .header p{font-size:11px;color:rgba(255,255,255,0.5)}
+    .status-card{background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;margin-bottom:12px}
+    .status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+    .status-label{color:rgba(255,255,255,0.6);font-size:12px}
+    .status-value{font-weight:600;font-size:12px}
+    .ready{color:#22c55e}.not-ready{color:#ef4444}.running{color:#f59e0b}
+    .targets-section{margin-bottom:12px}
+    .targets-section h3{font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:8px}
+    .targets-input{width:100%;height:120px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-family:monospace;font-size:11px;padding:8px;resize:none}
+    .targets-input:focus{outline:none;border-color:#22c55e}
+    .targets-input::placeholder{color:rgba(255,255,255,0.3)}
+    .actions{display:flex;gap:8px;margin-bottom:12px}
+    .btn{flex:1;padding:10px 16px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .btn-primary{background:#22c55e;color:#000}
+    .btn-danger{background:#ef4444;color:#fff}
+    .progress-section{margin-bottom:12px}
+    .progress-bar{height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden}
+    .progress-fill{height:100%;background:#22c55e;width:0%;transition:width 0.3s}
+    .progress-text{font-size:11px;color:rgba(255,255,255,0.5);text-align:center;margin-top:4px}
+    .results-section{max-height:150px;overflow-y:auto}
+    .result-item{display:flex;justify-content:space-between;padding:6px 8px;font-size:11px;border-radius:4px;margin-bottom:4px}
+    .result-item.success{background:rgba(34,197,94,0.2)}
+    .result-item.failed{background:rgba(239,68,68,0.2)}
+    .result-item.skipped{background:rgba(156,163,175,0.2)}
+    .result-item.processing{background:rgba(245,158,11,0.2)}
+    .warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:10px;font-size:11px;color:#f59e0b;text-align:center;margin-bottom:12px}
   </style>
 </head>
 <body>
@@ -202,7 +43,6 @@
     <h1>✊ Report Bot</h1>
     <p>Fight back against the Islamic regime's tyranny</p>
   </div>
-  
   <div class="status-card">
     <div class="status-row">
       <span class="status-label">Instagram Tab</span>
@@ -213,34 +53,119 @@
       <span class="status-value" id="bot-status">Idle</span>
     </div>
   </div>
-  
-  <div id="warning" class="warning" style="display: none;">
-    Please open Instagram in a tab first
-  </div>
-  
+  <div id="warning" class="warning" style="display:none">Please open Instagram in a tab first</div>
   <div class="targets-section">
     <h3>Targets (one username per line, without @)</h3>
     <textarea class="targets-input" id="targets" placeholder="username1&#10;username2&#10;username3"></textarea>
   </div>
-  
   <div class="actions">
-    <button class="btn btn-primary" id="start-btn" disabled>
-      <span>▶</span> Start
-    </button>
-    <button class="btn btn-danger" id="stop-btn" disabled>
-      <span>⏹</span> Stop
-    </button>
+    <button class="btn btn-primary" id="start-btn" disabled><span>▶</span> Start</button>
+    <button class="btn btn-danger" id="stop-btn" disabled><span>⏹</span> Stop</button>
   </div>
-  
   <div class="progress-section">
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress"></div>
-    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
     <div class="progress-text" id="progress-text">0 / 0</div>
   </div>
-  
   <div class="results-section" id="results"></div>
-  
-  <script src="popup.js"></script>
+  <script>
+const DEFAULT_TARGETS=`khameneiii_sarbazann
+saeedism_iri
+meysame_tamaaarr4
+hosseinmohajer_official
+alirezahp128
+sohrab_khatami73
+aqaaye_h
+musareza_arfei
+seyyedoona
+az_mantagheh
+seyyedoona_official
+seyyedoona.text
+mo.darzi9191
+_amiri8303
+miss_gilanii
+ahmadsafariofficial
+amir.malekniya
+farshidbabai62
+nazdikesobeh
+mohammad_.reza68690
+sheykh_azad
+hamidkeramatkhah
+basirat.ammar3
+ihanif2_ir
+sanazshaerii
+kalamesaleh
+khanoommhajii
+velayat_1362
+abolhasani_officiall
+muhammad_shahi
+bedoonemarze
+navaei.ir
+nanototv2
+mr_langeruodi
+a.r.geraie
+mohammad.tajik313
+saayebanoo
+ali.zahraei.110
+mojtaba.azhdari81`;
+
+const $=id=>document.getElementById(id);
+let tabId=null;
+
+async function init(){
+  const s=await chrome.storage.local.get(['targets','results','currentIndex','isRunning','totalTargets']);
+  $('targets').value=s.targets||DEFAULT_TARGETS;
+  if(!s.targets)await chrome.storage.local.set({targets:DEFAULT_TARGETS});
+  $('targets').oninput=async()=>await chrome.storage.local.set({targets:$('targets').value});
+  $('start-btn').onclick=start;
+  $('stop-btn').onclick=stop;
+  chrome.runtime.onMessage.addListener(m=>{if(m.type==='STATUS_UPDATE')update(m.data)});
+  setInterval(check,1000);
+  check();
+}
+
+async function check(){
+  const tabs=await chrome.tabs.query({url:'https://www.instagram.com/*'});
+  if(tabs.length>0){
+    tabId=tabs[0].id;
+    $('ig-status').textContent='Ready';
+    $('ig-status').className='status-value ready';
+    $('warning').style.display='none';
+    $('start-btn').disabled=false;
+  }else{
+    tabId=null;
+    $('ig-status').textContent='Not Found';
+    $('ig-status').className='status-value not-ready';
+    $('warning').style.display='block';
+    $('start-btn').disabled=true;
+  }
+  const s=await chrome.storage.local.get(['results','currentIndex','isRunning','totalTargets']);
+  update(s);
+}
+
+function update(s){
+  const running=s.isRunning||false,idx=s.currentIndex||0,total=s.totalTargets||0,results=s.results||[];
+  $('bot-status').textContent=running?'Running...':'Idle';
+  $('bot-status').className='status-value '+(running?'running':'ready');
+  $('start-btn').disabled=running||!tabId;
+  $('stop-btn').disabled=!running;
+  $('progress').style.width=total>0?Math.round(idx/total*100)+'%':'0%';
+  $('progress-text').textContent=idx+' / '+total;
+  $('results').innerHTML=results.map(r=>`<div class="result-item ${r.status}"><span>@${r.username}</span><span>${{success:'Reported ✓',failed:'Failed ✗',skipped:'Not Found',processing:'Processing...'}[r.status]||r.status}</span></div>`).join('');
+}
+
+async function start(){
+  const targets=$('targets').value.split('\n').map(t=>t.trim()).filter(t=>t);
+  if(!targets.length)return alert('Add at least one target');
+  await chrome.storage.local.set({targets:$('targets').value,targetsList:targets,totalTargets:targets.length,currentIndex:0,results:[],isRunning:true});
+  chrome.runtime.sendMessage({type:'START_BOT',tabId,targets});
+}
+
+async function stop(){
+  await chrome.storage.local.set({isRunning:false});
+  chrome.runtime.sendMessage({type:'STOP_BOT'});
+}
+
+init();
+  </script>
 </body>
 </html>

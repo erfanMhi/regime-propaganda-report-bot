@@ -1,53 +1,31 @@
 # Instagram Report Bot - Chrome Extension
 
-A Chrome extension version of the Instagram Report Bot. No Python, no terminal, no debug mode required.
+**4 files. No Python. No terminal. No debug mode.**
 
-## ⚡ Installation
+## ⚡ Install (30 seconds)
 
 1. Download this `extension` folder
-2. Open Chrome and go to `chrome://extensions`
-3. Enable **Developer mode** (toggle in top-right)
-4. Click **Load unpacked**
-5. Select the `extension` folder
-6. Done! You'll see the extension icon in your toolbar
+2. Go to `chrome://extensions`
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** → select the folder
+5. Done!
 
-## 🚀 How to Use
+## 🚀 Use
 
-1. **Open Instagram** in a tab and make sure you're logged in
-2. **Click the extension icon** in your toolbar
-3. The target list is pre-filled. Add/remove usernames as needed (one per line, without @)
-4. **Click Start** - the bot will:
-   - Navigate to each profile
-   - Click through the report flow (Report → Violence → Calling for Violence)
-   - Wait 15-25 seconds between profiles
-5. **Click Stop** anytime to pause
+1. Open **Instagram** in a tab (make sure you're logged in)
+2. Click the **extension icon** in toolbar
+3. Click **Start**
 
-## ⚠️ Caution
-
-Using bots on Instagram **may result in a temporary ban**. Use at your own risk.
-
-That said, I've used this tool multiple times without issues - the probability seems low.
-
-## 📝 Adding Targets
-
-Edit the text area in the popup. One username per line, without @:
+## 📁 Files
 
 ```
-username1
-username2
-username3
+extension/
+├── manifest.json    # Config
+├── popup.html       # UI (all-in-one)
+├── background.js    # Navigation
+└── content.js       # DOM automation
 ```
-
-The list is saved automatically.
-
-## ❓ Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| "Instagram Tab: Not Found" | Open instagram.com in a tab first |
-| Report flow stops early | Instagram UI may have changed. Check console for errors |
-| "Rate limited" | Wait 60 seconds, bot will resume automatically |
 
 ---
 
-**Fight back against the Islamic regime's tyranny** ✊
+✊ **Fight back against the Islamic regime's tyranny**
