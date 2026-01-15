@@ -84,21 +84,26 @@ if not errorlevel 1 (
     )
 )
 
+REM Start the web server in background first
+echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   Starting bot server...
+echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+set SKIP_BROWSER_OPEN=1
+start /B python src\app.py
+
+REM Wait for server to be ready
+timeout /t 2 /nobreak >nul
+
 REM Launch Chrome in debug mode with the bot UI
 set "PROFILE_DIR=%USERPROFILE%\.chrome_reporting_bot_profile"
 if not exist "%PROFILE_DIR%" mkdir "%PROFILE_DIR%"
 
-echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo   Launching Chrome in debug mode...
-echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   Opening Chrome...
 
 start "" "%CHROME_PATH%" --remote-debugging-port=9222 --user-data-dir="%PROFILE_DIR%" "http://localhost:5555"
 
-REM Give Chrome a moment to start
-timeout /t 2 /nobreak >nul
-
-REM Run the app (don't auto-open browser since Chrome already has the URL)
-set SKIP_BROWSER_OPEN=1
-python src\app.py
-
-pause
+REM Keep the window open
+echo.
+echo Press Ctrl+C to stop the bot...
+pause >nul

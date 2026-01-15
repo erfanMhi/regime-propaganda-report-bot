@@ -72,13 +72,22 @@ if pgrep -x "Google Chrome" > /dev/null; then
     fi
 fi
 
+# Start the web server in background first
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  🚀 Starting bot server..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+SKIP_BROWSER_OPEN=1 python src/app.py &
+SERVER_PID=$!
+
+# Wait for server to be ready
+sleep 2
+
 # Launch Chrome in debug mode with the bot UI
 PROFILE_DIR="$HOME/.chrome_reporting_bot_profile"
 mkdir -p "$PROFILE_DIR"
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🚀 Launching Chrome in debug mode..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  🌐 Opening Chrome..."
 
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
     --remote-debugging-port=9222 \
@@ -86,8 +95,5 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
     "http://localhost:5555" \
     2>/dev/null &
 
-# Give Chrome a moment to start
-sleep 2
-
-# Run the app (don't auto-open browser since Chrome already has the URL)
-SKIP_BROWSER_OPEN=1 python src/app.py
+# Wait for the server process (keeps terminal open)
+wait $SERVER_PID
