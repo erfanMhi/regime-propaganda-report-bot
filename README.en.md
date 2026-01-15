@@ -39,13 +39,15 @@ Click **"Start"** in the bot interface — done!
 
 ## 📝 Adding Targets
 
-Edit `data/targets.txt` — one username per line (without @):
+The list is **already pre-filled** with accounts we've found. You can add your own by editing `data/targets.txt` — one username per line (without @):
 
 ```
 username1
 username2
 username3
 ```
+
+**Have a big list?** Make a pull request and we'll add them!
 
 ---
 
