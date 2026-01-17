@@ -39,8 +39,22 @@ async function doReport(username) {
 
   reportInProgress = true;
   try {
-    // Wait for page to stabilize.
-    await waitFor(() => document.body && document.body.innerText && document.body.innerText.length > 0, 12000, 250);
+    // Wait for Twitter SPA to actually load the profile content.
+    // Look for profile-specific elements that indicate the page is ready.
+    console.log('[ReportBot X] Waiting for profile to load...');
+    const profileLoaded = await waitFor(() => {
+      // Check for userActions button (the 3-dots menu) OR profile not found indicators
+      const userActions = document.querySelector('[data-testid="userActions"]');
+      const profileHeader = document.querySelector('[data-testid="UserName"]');
+      const notFoundText = document.body?.innerText?.toLowerCase() || '';
+      const isNotFound = NOT_FOUND_INDICATORS.some(ind => notFoundText.includes(ind.toLowerCase()));
+      return userActions || profileHeader || isNotFound;
+    }, 15000, 300);
+
+    if (!profileLoaded) {
+      console.log('[ReportBot X] Profile page did not load in time');
+      return { success: false, error: 'Page load timeout' };
+    }
 
     // Check if profile exists.
     if (!checkProfileExists()) {
@@ -62,11 +76,11 @@ async function doReport(username) {
 
     // Step 1: Click the 3 dots menu (userActions button)
     console.log('[ReportBot X] Step 1: Click options menu (3 dots)');
-    if (!await retryFor(() => clickOptionsMenu(), 8000)) {
+    if (!await retryFor(() => clickOptionsMenu(), 10000)) {
       console.log('[ReportBot X] Could not find options menu');
       return { success: false, error: 'No options menu' };
     }
-    await sleep(600);
+    await sleep(400);
     
     // Step 2: Click Report @username button
     console.log('[ReportBot X] Step 2: Click Report button');

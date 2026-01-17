@@ -40,9 +40,24 @@ async function doReport(username) {
 
   reportInProgress = true;
   try {
-    // Wait for page to stabilize.
-    await waitFor(() => document.body && document.body.innerText && document.body.innerText.length > 0, 10000, 200);
-  
+    // Wait for Instagram SPA to actually load the profile content.
+    console.log('[ReportBot] Waiting for profile to load...');
+    const profileLoaded = await waitFor(() => {
+      // Check for Options button (3-dots menu) OR profile not found indicators
+      const optionsBtn = document.querySelector('svg[aria-label="Options"]') || 
+                         document.querySelector('svg[aria-label="More options"]') ||
+                         document.querySelector('[aria-label="Options"]');
+      const header = document.querySelector('header');
+      const notFoundText = document.body?.innerText?.toLowerCase() || '';
+      const isNotFound = NOT_FOUND_INDICATORS.some(ind => notFoundText.includes(ind.toLowerCase()));
+      return optionsBtn || (header && header.querySelector('[role="button"]')) || isNotFound;
+    }, 15000, 300);
+
+    if (!profileLoaded) {
+      console.log('[ReportBot] Profile page did not load in time');
+      return { success: false, error: 'Page load timeout' };
+    }
+
     // Check if profile exists.
     if (!checkProfileExists()) {
       console.log('[ReportBot] Profile not found');
@@ -57,11 +72,11 @@ async function doReport(username) {
   
     // Step 1: Click options menu (3 dots)
     console.log('[ReportBot] Step 1: Click options menu');
-    if (!await retryFor(() => clickOptionsMenu(), 8000)) {
+    if (!await retryFor(() => clickOptionsMenu(), 10000)) {
       console.log('[ReportBot] Could not find options menu');
       return { success: false, error: 'No options menu' };
     }
-    await sleep(600);
+    await sleep(400);
     
     // Step 2: Click Report button
     console.log('[ReportBot] Step 2: Click Report');
