@@ -63,7 +63,7 @@
 2. Log in with your account
 3. Click the **extension icon** in your toolbar
 4. Select the **X** tab
-5. You'll see ~4,846 accounts from the [Islamic Republic Influence Networks](https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks) dataset
+5. You'll see an initial list of identified accounts (you can modify or add to this list as you please)
 6. Click the **Start** button
 7. The bot will:
    - Open each profile
@@ -112,7 +112,7 @@ I've personally used this multiple times without issues — the risk seems low.
 
 ## 📊 Data Source
 
-The X/Twitter target accounts are sourced from the [Islamic Republic Influence Networks](https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks) dataset, which documents accounts exhibiting engagement patterns with Islamic Republic state-affiliated media. The dataset currently includes **4,846 accounts**.
+The target accounts are an initial list that we've compiled. You can modify this list as you please: add new accounts or remove ones you don't think should be reported.
 
 ---
 
