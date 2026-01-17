@@ -6,7 +6,7 @@
 
 # 🚨 Regime Propaganda Report Bot
 
-**Report accounts connected to the Islamic regime propaganda machine.**
+**Report accounts connected to the Islamic regime propaganda machine on Instagram and X (Twitter).**
 
 **Why?** Many anti-regime protesters have been wrongfully killed. Propaganda networks label them "terrorists" instead of the heroes they were. This tool helps report those accounts more easily.
 
@@ -44,23 +44,33 @@
 
 ## 🚀 How to Use
 
-### Step 1: Log into Instagram
+### For Instagram
 
-1. Open a new tab
-2. Go to **instagram.com**
-3. Log in with your username and password
+1. Open a new tab and go to **instagram.com**
+2. Log in with your username and password
+3. Click the **extension icon** in your toolbar
+4. Select the **Instagram** tab
+5. You'll see a list of propaganda accounts (pre-filled)
+6. Click the green **Start** button
+7. The bot will:
+   - Open each profile
+   - Report them for "Violence / Calling for violence"
+   - Wait 15-25 seconds between reports
 
-### Step 2: Start Reporting
+### For X (Twitter)
 
-1. Click the **extension icon** in your toolbar
-2. You'll see a list of propaganda accounts (pre-filled)
-3. Click the green **Start** button
-4. Watch as the bot:
-   - Opens each profile
-   - Reports them for "Violence / Calling for violence"
-   - Waits 15-25 seconds between reports
+1. Open a new tab and go to **x.com** (or twitter.com)
+2. Log in with your account
+3. Click the **extension icon** in your toolbar
+4. Select the **X** tab
+5. You'll see ~4,846 accounts from the [Islamic Republic Influence Networks](https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks) dataset
+6. Click the **Start** button
+7. The bot will:
+   - Open each profile
+   - Report them for hateful content
+   - Wait 20-30 seconds between reports
 
-### Step 3: Done!
+### Done!
 
 Keep Chrome open while it runs. Click **Stop** anytime to pause.
 
@@ -82,7 +92,7 @@ username3
 
 ## ⚠️ Caution
 
-Using automation on Instagram **may result in a temporary restriction**. Use at your own risk.
+Using automation on Instagram or X **may result in a temporary restriction**. Use at your own risk.
 
 I've personally used this multiple times without issues — the risk seems low.
 
@@ -93,9 +103,16 @@ I've personally used this multiple times without issues — the risk seems low.
 | Problem | Solution |
 |---------|----------|
 | "Instagram Tab: Not Found" | Make sure instagram.com is open in a tab and you're logged in |
+| "X Tab: Not Found" | Make sure x.com or twitter.com is open in a tab and you're logged in |
 | Can't see extension icon | Click the puzzle 🧩 icon → Pin the extension |
-| Reporting stops mid-way | Instagram's UI may have changed — check for updates |
-| Nothing happens when clicking Start | Refresh the Instagram tab and try again |
+| Reporting stops mid-way | Platform UI may have changed — check for updates |
+| Nothing happens when clicking Start | Refresh the platform tab and try again |
+
+---
+
+## 📊 Data Source
+
+The X/Twitter target accounts are sourced from the [Islamic Republic Influence Networks](https://github.com/goldenowlosint/Islamic-Republic-Influence-Networks) dataset, which documents accounts exhibiting engagement patterns with Islamic Republic state-affiliated media. The dataset currently includes **4,846 accounts**.
 
 ---
 
