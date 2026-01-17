@@ -547,97 +547,63 @@ async function doReport(username) {
 
     simulateClick(reportBtn);
 
-    // Wait for the report dialog with options to appear (look for "Hate" option)
-    const hateOption = await waitForRadioOption(['Hate'], TIMEOUTS.ELEMENT_WAIT);
+    // Wait for the report dialog with options to appear (look for "Violent & hateful entities" option)
+    const violentEntitiesOption = await waitForRadioOption(['Violent & hateful entities', 'Violent and hateful entities'], TIMEOUTS.ELEMENT_WAIT);
 
-    if (!hateOption) {
-      console.log('[ReportBot X] Could not find Hate option');
+    if (!violentEntitiesOption) {
+      console.log('[ReportBot X] Could not find Violent & hateful entities option');
       await ensureDialogsClosed();
-      return { success: false, error: 'No Hate option' };
+      return { success: false, error: 'No Violent & hateful entities option' };
     }
 
     // ========================================
-    // Step 3: Click Hate option
+    // Step 3: Click Violent & hateful entities option
     // ========================================
-    console.log('[ReportBot X] Step 3: Click Hate option');
+    console.log('[ReportBot X] Step 3: Click Violent & hateful entities option');
 
     // Click the label or its radio input
-    const radio = hateOption.querySelector('input[type="radio"]');
+    const radio = violentEntitiesOption.querySelector('input[type="radio"]');
     if (radio) {
       simulateClick(radio);
       await sleep(100);
     }
-    simulateClick(hateOption);
+    simulateClick(violentEntitiesOption);
 
-    // Wait for Next button to be clickable (required in most flows)
-    const nextBtn1 = await waitForElement(findNextButton, TIMEOUTS.ELEMENT_WAIT);
-    if (!nextBtn1) {
-      console.log('[ReportBot X] Could not find Next button after Hate');
-      await ensureDialogsClosed();
-      return { success: false, error: 'No Next button after Hate' };
-    }
+    // After clicking this option, it goes directly to the confirmation screen
+    // Wait for the confirmation screen with "Thanks for helping" or "Submitted" text
+    console.log('[ReportBot X] Step 4: Wait for confirmation screen');
 
-    console.log('[ReportBot X] Step 3b: Click Next after Hate');
-    simulateClick(nextBtn1);
+    const confirmationFound = await waitFor(() => {
+      const pageText = document.body.innerText.toLowerCase();
+      return pageText.includes('thanks for helping') ||
+             pageText.includes('submitted') ||
+             pageText.includes('your report is in our queue');
+    }, TIMEOUTS.ELEMENT_WAIT, TIMEOUTS.RETRY_INTERVAL);
 
-    // CRITICAL: Wait for screen transition - the previous option should disappear
-    // before we look for "Dehumanization". Prefer waiting on the actual element.
-    console.log('[ReportBot X] Waiting for screen transition...');
-    await waitForElementToDisappear(hateOption, TIMEOUTS.ELEMENT_WAIT);
+    if (confirmationFound) {
+      console.log('[ReportBot X] Confirmation screen detected - report successful');
+      didSubmit = true;
 
-    // Wait for Dehumanization option
-    const dehumanOption = await waitForRadioOption(['Dehumanization'], TIMEOUTS.ELEMENT_WAIT);
-
-    if (!dehumanOption) {
-      console.log('[ReportBot X] Could not find Dehumanization option');
-      await ensureDialogsClosed();
-      return { success: false, error: 'No Dehumanization option' };
-    }
-
-    // ========================================
-    // Step 4: Click Dehumanization option
-    // ========================================
-    console.log('[ReportBot X] Step 4: Click Dehumanization option');
-
-    const radio2 = dehumanOption.querySelector('input[type="radio"]');
-    if (radio2) {
-      simulateClick(radio2);
-      await sleep(100);
-    }
-    simulateClick(dehumanOption);
-
-    // ========================================
-    // Step 5: Click Submit
-    // ========================================
-    console.log('[ReportBot X] Step 5: Click Submit');
-
-    const submitBtn = await waitForElement(findNextButton, TIMEOUTS.ELEMENT_WAIT);
-    if (!submitBtn) {
-      console.log('[ReportBot X] Could not find Submit/Next button');
-      await ensureDialogsClosed();
-      return { success: false, error: 'No Submit/Next button' };
-    }
-
-    simulateClick(submitBtn);
-    didSubmit = true;
-
-    // Wait a moment for any confirmation screen
-    await sleep(1000);
-
-    // ========================================
-    // Step 6: Click any additional confirmation
-    // ========================================
-    console.log('[ReportBot X] Step 6: Click any confirmation');
-
-    const confirmBtn = await waitForElement(findNextButton, TIMEOUTS.POST_CLICK_VERIFY);
-    if (confirmBtn) {
-      simulateClick(confirmBtn);
+      // Click the Done button on the confirmation dialog
+      const doneBtn = await waitForElement(findNextButton, TIMEOUTS.POST_CLICK_VERIFY);
+      if (doneBtn) {
+        console.log('[ReportBot X] Step 5: Click Done button');
+        simulateClick(doneBtn);
+        await sleep(500);
+      }
+    } else {
+      console.log('[ReportBot X] No confirmation screen found, trying to click Next/Submit anyway');
+      const nextBtn = await waitForElement(findNextButton, TIMEOUTS.POST_CLICK_VERIFY);
+      if (nextBtn) {
+        simulateClick(nextBtn);
+        didSubmit = true;
+        await sleep(500);
+      }
     }
 
     // ========================================
     // Cleanup
     // ========================================
-    await sleep(500);
     await ensureDialogsClosed();
 
     console.log('[ReportBot X] Report complete for:', username);
