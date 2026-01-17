@@ -5,58 +5,381 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Report Bot</title>
   <style>
+    /*
+     * Color Palette:
+     * Off-White Linen: #FAF9F7 (page background)
+     * Elevated Background: #F3F2EF (cards/frames)
+     * Foreground: #1A1A1A (main text)
+     * Muted: #6B7280 (secondary text)
+     * Deep Crimson: #B10A1F (primary CTA)
+     * Crimson Hover: #C91225 (hover states)
+     * Forest Green: #227A35 (success/accents)
+     * Soft Mint: #B7D8B2 (success backgrounds)
+     */
+
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#1a1a1a;width:360px;min-height:450px;padding:0}
-    .header{text-align:center;padding:12px 16px;border-bottom:2px solid #22c55e}
-    .header h1{font-size:18px;margin-bottom:2px;color:#22c55e}
-    .header p{font-size:10px;color:#666}
-    
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:#FAF9F7;
+      color:#1A1A1A;
+      width:360px;
+      min-height:450px;
+      padding:0;
+    }
+
+    /* Header */
+    .header{
+      text-align:center;
+      padding:16px 16px 14px;
+      border-bottom:2px solid #B10A1F;
+      background:linear-gradient(180deg,#FAF9F7 0%,#F3F2EF 100%);
+    }
+    .header h1{
+      font-size:18px;
+      margin-bottom:4px;
+      color:#B10A1F;
+      font-weight:700;
+      letter-spacing:-0.3px;
+    }
+    .header p{
+      font-size:10px;
+      color:#6B7280;
+      font-weight:500;
+    }
+
     /* Tabs */
-    .tabs{display:flex;border-bottom:1px solid #e0e0e0}
-    .tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-weight:600;font-size:13px;color:#666;border-bottom:3px solid transparent;transition:all 0.2s}
-    .tab:hover{background:#f5f5f5}
-    .tab.active{color:#22c55e;border-bottom-color:#22c55e}
-    .tab.active.twitter{color:#000;border-bottom-color:#000}
+    .tabs{
+      display:flex;
+      border-bottom:1px solid #E5E4E1;
+      background:#F3F2EF;
+    }
+    .tab{
+      flex:1;
+      padding:12px;
+      text-align:center;
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+      color:#6B7280;
+      border-bottom:3px solid transparent;
+      transition:all 0.2s ease;
+    }
+    .tab:hover{
+      background:#FAF9F7;
+      color:#1A1A1A;
+    }
+    .tab.active{
+      color:#B10A1F;
+      border-bottom-color:#B10A1F;
+      background:#FAF9F7;
+    }
+    .tab.active.twitter{
+      color:#1A1A1A;
+      border-bottom-color:#1A1A1A;
+    }
     .tab-icon{margin-right:6px}
-    
-    .content{padding:16px}
+
+    .content{padding:16px;background:#FAF9F7}
     .tab-content{display:none}
     .tab-content.active{display:block}
-    
-    .status-card{background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:12px}
-    .status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
-    .status-label{color:#555;font-size:12px;font-weight:500}
-    .status-value{font-weight:700;font-size:12px}
-    .ready{color:#22c55e}.not-ready{color:#dc2626}.running{color:#22c55e}.paused{color:#f59e0b}
-    .ready.twitter{color:#000}
-    .targets-section{margin-bottom:12px}
-    .targets-section h3{font-size:12px;color:#555;margin-bottom:8px;font-weight:600}
-    .targets-input{width:100%;height:100px;background:#fff;border:2px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-family:monospace;font-size:11px;padding:8px;resize:none}
-    .targets-input:focus{outline:none;border-color:#22c55e}
-    .targets-input.twitter:focus{border-color:#000}
-    .targets-input::placeholder{color:#999}
-    .actions{display:flex;gap:6px;margin-bottom:12px}
-    .btn{flex:1;padding:10px 8px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
-    .btn:disabled{opacity:0.4;cursor:not-allowed}
-    .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-    .btn-primary{background:#22c55e;color:#fff}
-    .btn-primary.twitter{background:#000}
-    .btn-secondary{background:#fff;color:#22c55e;border:2px solid #22c55e;padding:8px 6px}
-    .btn-secondary.twitter{color:#000;border-color:#000}
-    .btn-danger{background:#dc2626;color:#fff}
+
+    /* Status Card */
+    .status-card{
+      background:#F3F2EF;
+      border:1px solid #E5E4E1;
+      border-radius:10px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    }
+    .status-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:6px 0;
+    }
+    .status-label{
+      color:#6B7280;
+      font-size:12px;
+      font-weight:500;
+    }
+    .status-value{
+      font-weight:700;
+      font-size:12px;
+    }
+    .ready{color:#227A35}
+    .not-ready{color:#B10A1F}
+    .running{color:#227A35}
+    .paused{color:#C91225}
+    .ready.twitter{color:#1A1A1A}
+
+    /* Targets Section */
+    .targets-section{margin-bottom:14px}
+    .targets-section h3{
+      font-size:12px;
+      color:#6B7280;
+      margin-bottom:8px;
+      font-weight:600;
+    }
+    .targets-input{
+      width:100%;
+      height:100px;
+      background:#FFFFFF;
+      border:2px solid #E5E4E1;
+      border-radius:8px;
+      color:#1A1A1A;
+      font-family:'SF Mono',Monaco,Consolas,monospace;
+      font-size:11px;
+      padding:10px;
+      resize:none;
+      transition:border-color 0.2s ease,box-shadow 0.2s ease;
+    }
+    .targets-input:focus{
+      outline:none;
+      border-color:#227A35;
+      box-shadow:0 0 0 3px rgba(34,122,53,0.1);
+    }
+    .targets-input.twitter:focus{
+      border-color:#1A1A1A;
+      box-shadow:0 0 0 3px rgba(26,26,26,0.1);
+    }
+    .targets-input::placeholder{color:#9CA3AF}
+
+    /* Actions */
+    .actions{display:flex;gap:8px;margin-bottom:14px}
+    .btn{
+      flex:1;
+      padding:11px 8px;
+      border:none;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      transition:all 0.2s ease;
+      text-transform:uppercase;
+      letter-spacing:0.4px;
+      white-space:nowrap;
+    }
+    .btn:disabled{
+      opacity:0.4;
+      cursor:not-allowed;
+    }
+    .btn:hover:not(:disabled){
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(0,0,0,0.12);
+    }
+    .btn-primary{
+      background:#B10A1F;
+      color:#FFFFFF;
+    }
+    .btn-primary:hover:not(:disabled){
+      background:#C91225;
+    }
+    .btn-primary.twitter{
+      background:#1A1A1A;
+    }
+    .btn-primary.twitter:hover:not(:disabled){
+      background:#333333;
+    }
+    .btn-secondary{
+      background:#FFFFFF;
+      color:#227A35;
+      border:2px solid #227A35;
+      padding:9px 6px;
+    }
+    .btn-secondary:hover:not(:disabled){
+      background:#227A35;
+      color:#FFFFFF;
+    }
+    .btn-secondary.twitter{
+      color:#1A1A1A;
+      border-color:#1A1A1A;
+    }
+    .btn-secondary.twitter:hover:not(:disabled){
+      background:#1A1A1A;
+      color:#FFFFFF;
+    }
+    .btn-danger{
+      background:#B10A1F;
+      color:#FFFFFF;
+    }
+    .btn-danger:hover:not(:disabled){
+      background:#8B0818;
+    }
     .btn.hidden{display:none}
-    .progress-section{margin-bottom:12px}
-    .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden}
-    .progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);width:0%;transition:width 0.3s}
-    .progress-fill.twitter{background:linear-gradient(90deg,#000,#333)}
-    .progress-text{font-size:12px;color:#555;text-align:center;margin-top:6px;font-weight:600}
-    .results-section{max-height:120px;overflow-y:auto}
-    .result-item{display:flex;justify-content:space-between;padding:8px 10px;font-size:11px;border-radius:4px;margin-bottom:4px;font-weight:500}
-    .result-item.success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
-    .result-item.failed{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-    .result-item.skipped{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb}
-    .result-item.processing{background:#fff;color:#22c55e;border:1px solid #22c55e}
-    .warning{background:#fee2e2;border:2px solid #dc2626;border-radius:6px;padding:10px;font-size:11px;color:#dc2626;text-align:center;margin-bottom:12px;font-weight:600}
+
+    /* Progress */
+    .progress-section{margin-bottom:14px}
+    .progress-bar{
+      height:8px;
+      background:#E5E4E1;
+      border-radius:4px;
+      overflow:hidden;
+    }
+    .progress-fill{
+      height:100%;
+      background:linear-gradient(90deg,#227A35,#2D9A45);
+      width:0%;
+      transition:width 0.3s ease;
+    }
+    .progress-fill.twitter{
+      background:linear-gradient(90deg,#1A1A1A,#404040);
+    }
+    .progress-text{
+      font-size:12px;
+      color:#6B7280;
+      text-align:center;
+      margin-top:8px;
+      font-weight:600;
+    }
+
+    /* Results */
+    .results-section{
+      max-height:120px;
+      overflow-y:auto;
+    }
+    .results-section::-webkit-scrollbar{
+      width:6px;
+    }
+    .results-section::-webkit-scrollbar-track{
+      background:#F3F2EF;
+      border-radius:3px;
+    }
+    .results-section::-webkit-scrollbar-thumb{
+      background:#D1D0CD;
+      border-radius:3px;
+    }
+    .result-item{
+      display:flex;
+      justify-content:space-between;
+      padding:9px 12px;
+      font-size:11px;
+      border-radius:6px;
+      margin-bottom:6px;
+      font-weight:500;
+    }
+    .result-item.success{
+      background:rgba(183,216,178,0.3);
+      color:#166534;
+      border:1px solid #B7D8B2;
+    }
+    .result-item.failed{
+      background:rgba(177,10,31,0.08);
+      color:#8B0818;
+      border:1px solid rgba(177,10,31,0.2);
+    }
+    .result-item.skipped{
+      background:#F3F2EF;
+      color:#6B7280;
+      border:1px solid #E5E4E1;
+    }
+    .result-item.processing{
+      background:#FFFFFF;
+      color:#227A35;
+      border:1px solid #227A35;
+    }
+
+    /* Warning */
+    .warning{
+      background:rgba(177,10,31,0.08);
+      border:2px solid #B10A1F;
+      border-radius:8px;
+      padding:12px;
+      font-size:11px;
+      color:#B10A1F;
+      text-align:center;
+      margin-bottom:14px;
+      font-weight:600;
+    }
+
+    /* Daily Limit Counter */
+    .daily-limit{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .daily-limit-bar{
+      flex:1;
+      height:6px;
+      background:#E5E4E1;
+      border-radius:3px;
+      overflow:hidden;
+    }
+    .daily-limit-fill{
+      height:100%;
+      background:#227A35;
+      transition:width 0.3s ease, background 0.3s ease;
+    }
+    .daily-limit-fill.warning{
+      background:#F59E0B;
+    }
+    .daily-limit-fill.danger{
+      background:#B10A1F;
+    }
+    .daily-limit-text{
+      font-size:11px;
+      font-weight:600;
+      color:#6B7280;
+      min-width:50px;
+      text-align:right;
+    }
+
+    /* Rate Limit Warning Banner */
+    .rate-limit-banner{
+      background:linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);
+      border:2px solid #F59E0B;
+      border-radius:8px;
+      padding:12px;
+      margin-bottom:14px;
+      display:none;
+    }
+    .rate-limit-banner.active{
+      display:block;
+    }
+    .rate-limit-banner h4{
+      font-size:12px;
+      color:#92400E;
+      margin-bottom:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .rate-limit-banner p{
+      font-size:10px;
+      color:#A16207;
+      margin-bottom:10px;
+      line-height:1.4;
+    }
+    .rate-limit-banner .btn-small{
+      padding:6px 12px;
+      font-size:10px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
+      transition:all 0.2s ease;
+    }
+    .rate-limit-banner .btn-continue{
+      background:#F59E0B;
+      color:#FFFFFF;
+      margin-right:8px;
+    }
+    .rate-limit-banner .btn-continue:hover{
+      background:#D97706;
+    }
+    .rate-limit-banner .btn-stop{
+      background:#FFFFFF;
+      color:#92400E;
+      border:1px solid #F59E0B;
+    }
+    .rate-limit-banner .btn-stop:hover{
+      background:#FEF3C7;
+    }
   </style>
 </head>
 <body>
@@ -86,6 +409,21 @@
           <span class="status-label">Bot Status</span>
           <span class="status-value" id="ig-bot-status">Idle</span>
         </div>
+        <div class="status-row">
+          <span class="status-label">Today's Reports</span>
+          <div class="daily-limit">
+            <div class="daily-limit-bar">
+              <div class="daily-limit-fill" id="ig-daily-fill" style="width:0%"></div>
+            </div>
+            <span class="daily-limit-text" id="ig-daily-text">0/50</span>
+          </div>
+        </div>
+      </div>
+      <div id="ig-rate-limit-banner" class="rate-limit-banner">
+        <h4>⚠️ Daily Limit Reached</h4>
+        <p>You've reported 50 accounts today. Continuing may trigger rate limits or account restrictions from Instagram.</p>
+        <button class="btn-small btn-continue" id="ig-continue-btn">Continue Anyway</button>
+        <button class="btn-small btn-stop" id="ig-limit-stop-btn">Stop for Today</button>
       </div>
       <div id="ig-warning" class="warning" style="display:none">Please open Instagram in a tab first</div>
       <div class="targets-section">
@@ -115,6 +453,21 @@
           <span class="status-label">Bot Status</span>
           <span class="status-value" id="tw-bot-status">Idle</span>
         </div>
+        <div class="status-row">
+          <span class="status-label">Today's Reports</span>
+          <div class="daily-limit">
+            <div class="daily-limit-bar">
+              <div class="daily-limit-fill" id="tw-daily-fill" style="width:0%"></div>
+            </div>
+            <span class="daily-limit-text" id="tw-daily-text">0/50</span>
+          </div>
+        </div>
+      </div>
+      <div id="tw-rate-limit-banner" class="rate-limit-banner">
+        <h4>⚠️ Daily Limit Reached</h4>
+        <p>You've reported 50 accounts today. Continuing may trigger rate limits or account restrictions from X.</p>
+        <button class="btn-small btn-continue" id="tw-continue-btn">Continue Anyway</button>
+        <button class="btn-small btn-stop" id="tw-limit-stop-btn">Stop for Today</button>
       </div>
       <div id="tw-warning" class="warning" style="display:none">Please open X in a tab first</div>
       <div class="targets-section">
