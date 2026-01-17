@@ -12,92 +12,102 @@ const NOT_FOUND_INDICATORS = [
 
 const CLOSE_DIALOG_TEXTS = ["Close", "Done", "OK", "Dismiss", "×", "Not now", "Cancel"];
 
+let reportInProgress = false;
+
 // Listen for messages from background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message && message.type === 'PING') {
+    sendResponse({ pong: true });
+    return;
+  }
   if (message.type === 'DO_REPORT') {
-    doReport(message.username).then(result => {
-      sendResponse(result);
-    }).catch(err => {
-      console.error('Report error:', err);
-      sendResponse({ success: false, error: err.message });
-    });
+    if (reportInProgress) {
+      sendResponse({ success: false, error: 'Busy' });
+      return;
+    }
+    doReport(message.username)
+      .then((result) => sendResponse(result))
+      .catch((err) => {
+        console.error('Report error:', err);
+        sendResponse({ success: false, error: err && err.message ? err.message : String(err) });
+      });
     return true; // Keep channel open for async response
   }
 });
 
 async function doReport(username) {
   console.log('[ReportBot] Starting report for:', username);
-  
-  // Wait for page to stabilize
-  await sleep(1500);
-  
-  // Check if profile exists
-  if (!checkProfileExists()) {
-    console.log('[ReportBot] Profile not found');
-    return { success: false, notFound: true };
-  }
-  
-  // Check for rate limiting
-  if (isRateLimited()) {
-    console.log('[ReportBot] Rate limited, waiting...');
-    await sleep(60000);
-    return { success: false, error: 'Rate limited' };
-  }
-  
+
+  reportInProgress = true;
   try {
+    // Wait for page to stabilize.
+    await waitFor(() => document.body && document.body.innerText && document.body.innerText.length > 0, 10000, 200);
+  
+    // Check if profile exists.
+    if (!checkProfileExists()) {
+      console.log('[ReportBot] Profile not found');
+      return { success: false, notFound: true };
+    }
+  
+    // Check for rate limiting.
+    if (isRateLimited()) {
+      console.log('[ReportBot] Rate limited');
+      return { success: false, rateLimited: true, retryAfterMs: 60000 };
+    }
+  
     // Step 1: Click options menu (3 dots)
     console.log('[ReportBot] Step 1: Click options menu');
-    if (!await clickOptionsMenu()) {
+    if (!await retryFor(() => clickOptionsMenu(), 8000)) {
       console.log('[ReportBot] Could not find options menu');
       return { success: false, error: 'No options menu' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 2: Click Report button
     console.log('[ReportBot] Step 2: Click Report');
-    if (!await clickReport()) {
+    if (!await retryFor(() => clickReport(), 8000)) {
       console.log('[ReportBot] Could not find Report button');
       await closeDialogs();
       return { success: false, error: 'No Report button' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 3: Click Report Account
     console.log('[ReportBot] Step 3: Click Report Account');
-    if (!await clickReportAccount()) {
+    if (!await retryFor(() => clickReportAccount(), 8000)) {
       console.log('[ReportBot] Could not find Report Account option');
       await closeDialogs();
       return { success: false, error: 'No Report Account' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 4: Click first option (posting content)
     console.log('[ReportBot] Step 4: Click posting content option');
-    if (!await clickPostingContent()) {
+    if (!await retryFor(() => clickPostingContent(), 8000)) {
       console.log('[ReportBot] Could not find posting content option');
       await closeDialogs();
       return { success: false, error: 'No posting content' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 5: Click False Information
     console.log('[ReportBot] Step 5: Click False Information');
-    if (!await clickFalseInformation()) {
+    if (!await retryFor(() => clickFalseInformation(), 8000)) {
       console.log('[ReportBot] Could not find False Information option');
       await closeDialogs();
       return { success: false, error: 'No False Information option' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 6: Click any sub-option if present (e.g., "Health", "Politics", etc.)
     console.log('[ReportBot] Step 6: Click sub-option if present');
     await clickFirstListOption();
-    await sleep(1000);
+    await sleep(600);
     
     // Step 7: Click Submit (if present)
     console.log('[ReportBot] Step 7: Click Submit');
     await clickSubmit();
-    await sleep(1500);
+    await sleep(800);
     
     // Close any remaining dialogs
     await closeDialogs();
@@ -109,6 +119,8 @@ async function doReport(username) {
     console.error('[ReportBot] Error during report:', e);
     await closeDialogs();
     return { success: false, error: e.message };
+  } finally {
+    reportInProgress = false;
   }
 }
 
@@ -236,7 +248,7 @@ async function closeDialogs() {
   }
   
   // Try clicking outside dialog (press Escape)
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27 }));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
   
   return false;
 }
@@ -261,6 +273,33 @@ async function clickButtonByText(texts) {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function retryFor(fn, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const ok = await fn();
+      if (ok) return true;
+    } catch (e) {
+      // ignore and retry
+    }
+    await sleep(250);
+  }
+  return false;
+}
+
+async function waitFor(conditionFn, timeoutMs, intervalMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      if (conditionFn()) return true;
+    } catch (e) {
+      // ignore and retry
+    }
+    await sleep(intervalMs);
+  }
+  return false;
 }
 
 console.log('[ReportBot] Content script loaded');
