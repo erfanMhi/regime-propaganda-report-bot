@@ -5,8 +5,53 @@
 
 const MAX_ATTEMPTS_PER_TARGET = 3;
 const TAB_LOAD_TIMEOUT_MS = 20000;
-const CONTENT_SCRIPT_TIMEOUT_MS = 25000;
+// Instagram's reporting flow is slower/more variable than Twitter's and can exceed 25s
+// (multiple modal steps + UI transitions + network). Use platform-specific timeouts.
+const CONTENT_SCRIPT_TIMEOUT_MS_BY_PLATFORM = {
+  instagram: 90000,
+  twitter: 45000,
+};
 const TICK_LOCK_TTL_MS = 120000;
+const DAILY_LIMIT = 50;
+
+// ============================================================================
+// STARTUP RECOVERY
+// ============================================================================
+// When Chrome restarts, alarms are lost but storage persists.
+// This recovers any interrupted bot runs.
+
+chrome.runtime.onStartup.addListener(() => {
+  recoverInterruptedRuns();
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  recoverInterruptedRuns();
+});
+
+async function recoverInterruptedRuns() {
+  for (const platform of ['instagram', 'twitter']) {
+    const prefix = toPrefix(platform);
+    const state = await chrome.storage.local.get([
+      `${prefix}_isRunning`,
+      `${prefix}_job`,
+      `${prefix}_currentIndex`,
+      `${prefix}_totalTargets`
+    ]);
+
+    if (state[`${prefix}_isRunning`] && state[`${prefix}_job`]) {
+      // Bot was running when Chrome closed - mark as paused so user can resume
+      console.log(`[ReportBot] Recovering interrupted ${platform} run - marking as paused`);
+      await chrome.storage.local.set({
+        [`${prefix}_isRunning`]: false,
+        // Keep currentIndex and job so Resume works
+      });
+    }
+  }
+}
+
+// ============================================================================
+// MESSAGE HANDLERS
+// ============================================================================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || !message.type) return;
@@ -37,11 +82,18 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 async function startBot({ platform, tabId, targets, startIndex }) {
   const prefix = toPrefix(platform);
-  const safeTargets = Array.isArray(targets) ? targets.filter(Boolean) : [];
+  const safeTargets = Array.isArray(targets)
+    ? targets
+        .map((t) => String(t || '').trim().replace(/^@+/, ''))
+        .filter(Boolean)
+    : [];
   const runId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
   // Clear any stale lock from a previous crashed/interrupted run to avoid blocking.
   await chrome.storage.local.remove([`${prefix}_tickLock`]);
+
+  // Clear any previous limit-paused state when (re)starting.
+  await chrome.storage.local.set({ [`${prefix}_limitPaused`]: false });
 
   // Persist job state for reliability across SW suspension.
   await chrome.storage.local.set({
@@ -78,7 +130,12 @@ async function startBot({ platform, tabId, targets, startIndex }) {
 
 async function stopBot(platform) {
   const prefix = toPrefix(platform);
-  await chrome.storage.local.set({ [`${prefix}_isRunning`]: false, [`${prefix}_runId`]: null });
+  await chrome.storage.local.set({
+    [`${prefix}_isRunning`]: false,
+    [`${prefix}_runId`]: null,
+    // Manual stop should clear the "paused due to daily limit" state.
+    [`${prefix}_limitPaused`]: false,
+  });
   await chrome.storage.local.remove([`${prefix}_job`, `${prefix}_tickLock`]);
   await clearTick(platform);
   notifyPopup();
@@ -114,6 +171,18 @@ async function tick(platform) {
     return;
   }
 
+  // If we've already hit today's daily limit (and user hasn't overridden), pause before doing work.
+  if (await isDailyLimitReached(prefix)) {
+    await chrome.storage.local.set({
+      [`${prefix}_isRunning`]: false,
+      [`${prefix}_limitPaused`]: true,
+    });
+    await clearTick(platform);
+    await releaseTickLock(prefix);
+    notifyPopup();
+    return;
+  }
+
   const targets = job.targets;
   const index = Number.isFinite(job.index) ? job.index : 0;
   const attempt = Number.isFinite(job.attempt) ? job.attempt : 0;
@@ -141,35 +210,46 @@ async function tick(platform) {
     return;
   }
 
+  // Normalize username early to ensure consistency across all result updates.
+  const normalizedUsername = String(username || '').trim().replace(/^@+/, '');
+
   try {
     // Ensure tab exists before we commit to processing this target.
     await chrome.tabs.get(tabId);
 
     // Mark processing only after we've validated the tab exists.
     await chrome.storage.local.set({ [`${prefix}_currentIndex`]: index });
-    await addOrUpdateResult(prefix, username, 'processing');
-
-    // Navigate to profile URL.
+    await addOrUpdateResult(prefix, normalizedUsername, 'processing');
     const baseUrl = platform === 'instagram' ? 'https://www.instagram.com/' : 'https://x.com/';
-    await chrome.tabs.update(tabId, { url: `${baseUrl}${username}` });
+    await chrome.tabs.update(tabId, { url: `${baseUrl}${normalizedUsername}` });
     await waitForTabLoad(tabId, TAB_LOAD_TIMEOUT_MS);
 
     // Check if run was cancelled during navigation.
+    if (!await isRunActive(prefix, job.runId)) return;
+
+    // Wait 3-7 seconds (random) so user can review the profile before reporting.
+    const reviewDelayMs = 3000 + Math.floor(Math.random() * 4000);
+    await new Promise((r) => setTimeout(r, reviewDelayMs));
+
+    // Check again if run was cancelled during the review delay.
     if (!await isRunActive(prefix, job.runId)) return;
 
     // Ensure content script is present (best-effort).
     await ensureContentScript(platform, tabId);
 
     // Ask content script to perform the report with a timeout.
+    const contentScriptTimeoutMs =
+      CONTENT_SCRIPT_TIMEOUT_MS_BY_PLATFORM[platform] || 60000;
+
     const response = await withTimeout(
-      chrome.tabs.sendMessage(tabId, { type: 'DO_REPORT', username }),
-      CONTENT_SCRIPT_TIMEOUT_MS
+      chrome.tabs.sendMessage(tabId, { type: 'DO_REPORT', username: normalizedUsername }),
+      contentScriptTimeoutMs
     ).catch(async (err) => {
       // "Receiving end does not exist" often means content script isn't ready yet.
       await ensureContentScript(platform, tabId);
       return await withTimeout(
-        chrome.tabs.sendMessage(tabId, { type: 'DO_REPORT', username }),
-        CONTENT_SCRIPT_TIMEOUT_MS
+        chrome.tabs.sendMessage(tabId, { type: 'DO_REPORT', username: normalizedUsername }),
+        contentScriptTimeoutMs
       );
     });
 
@@ -187,14 +267,30 @@ async function tick(platform) {
     }
 
     if (response && response.success) {
-      await addOrUpdateResult(prefix, username, 'success');
+      console.log(`[ReportBot] Report SUCCESS for ${normalizedUsername}, advancing to index ${index + 1}`);
+      await addOrUpdateResult(prefix, normalizedUsername, 'success');
+
+      // Increment daily count and check limit
+      const newCount = await incrementDailyCount(prefix);
+      if (newCount >= DAILY_LIMIT && !await isLimitOverridden(prefix)) {
+        // Pause the bot - daily limit reached
+        await chrome.storage.local.set({
+          [`${prefix}_isRunning`]: false,
+          [`${prefix}_limitPaused`]: true,
+        });
+        await advanceJob(prefix, job, index + 1);
+        await clearTick(platform);
+        // Lock released by finally block
+        return;
+      }
+
       await advanceJob(prefix, job, index + 1);
       await scheduleTick(platform, interTargetDelayMs(platform));
       return;
     }
 
     if (response && response.notFound) {
-      await addOrUpdateResult(prefix, username, 'skipped');
+      await addOrUpdateResult(prefix, normalizedUsername, 'skipped');
       await advanceJob(prefix, job, index + 1);
       await scheduleTick(platform, interTargetDelayMs(platform));
       return;
@@ -217,7 +313,7 @@ async function tick(platform) {
       return;
     }
 
-    await addOrUpdateResult(prefix, username, 'failed');
+    await addOrUpdateResult(prefix, normalizedUsername, 'failed');
     await advanceJob(prefix, job, index + 1);
     await scheduleTick(platform, interTargetDelayMs(platform));
   } finally {
@@ -227,6 +323,7 @@ async function tick(platform) {
 }
 
 async function advanceJob(prefix, job, nextIndex) {
+  console.log(`[ReportBot] advanceJob: ${prefix} index ${job.index} -> ${nextIndex}`);
   await chrome.storage.local.set({
     [`${prefix}_job`]: { ...job, index: nextIndex, attempt: 0, updatedAt: Date.now() },
     [`${prefix}_currentIndex`]: nextIndex,
@@ -347,4 +444,63 @@ async function acquireTickLock(prefix, existingLock) {
 
 async function releaseTickLock(prefix) {
   await chrome.storage.local.remove([`${prefix}_tickLock`]);
+}
+
+// ============================================================================
+// DAILY LIMIT TRACKING
+// ============================================================================
+
+function getTodayKey() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function getDailyCount(prefix) {
+  const key = `${prefix}_daily_count`;
+  const dateKey = `${prefix}_daily_date`;
+  const today = getTodayKey();
+
+  const data = await chrome.storage.local.get([key, dateKey]);
+
+  if (data[dateKey] !== today) {
+    await chrome.storage.local.set({ [key]: 0, [dateKey]: today });
+    return 0;
+  }
+
+  return data[key] || 0;
+}
+
+async function incrementDailyCount(prefix) {
+  const key = `${prefix}_daily_count`;
+  const dateKey = `${prefix}_daily_date`;
+  const today = getTodayKey();
+
+  const data = await chrome.storage.local.get([key, dateKey]);
+
+  if (data[dateKey] !== today) {
+    await chrome.storage.local.set({ [key]: 1, [dateKey]: today });
+    return 1;
+  }
+
+  const newCount = (data[key] || 0) + 1;
+  await chrome.storage.local.set({ [key]: newCount });
+  return newCount;
+}
+
+async function isDailyLimitReached(prefix) {
+  const count = await getDailyCount(prefix);
+  const overrideKey = `${prefix}_limit_override`;
+  const data = await chrome.storage.local.get([overrideKey]);
+
+  // If user has overridden the limit for today, don't pause
+  if (data[overrideKey] === getTodayKey()) {
+    return false;
+  }
+
+  return count >= DAILY_LIMIT;
+}
+
+async function isLimitOverridden(prefix) {
+  const overrideKey = `${prefix}_limit_override`;
+  const data = await chrome.storage.local.get([overrideKey]);
+  return data[overrideKey] === getTodayKey();
 }
