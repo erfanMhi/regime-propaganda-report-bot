@@ -11,59 +11,75 @@ const NOT_FOUND_INDICATORS = [
 
 const CLOSE_DIALOG_TEXTS = ["Close", "Done", "OK", "Dismiss", "×", "Cancel", "Not now"];
 
+let reportInProgress = false;
+
 // Listen for messages from background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message && message.type === 'PING') {
+    sendResponse({ pong: true });
+    return;
+  }
   if (message.type === 'DO_REPORT') {
-    doReport(message.username).then(result => {
-      sendResponse(result);
-    }).catch(err => {
-      console.error('[ReportBot X] Report error:', err);
-      sendResponse({ success: false, error: err.message });
-    });
+    if (reportInProgress) {
+      sendResponse({ success: false, error: 'Busy' });
+      return;
+    }
+    doReport(message.username)
+      .then((result) => sendResponse(result))
+      .catch((err) => {
+        console.error('[ReportBot X] Report error:', err);
+        sendResponse({ success: false, error: err && err.message ? err.message : String(err) });
+      });
     return true; // Keep channel open for async response
   }
 });
 
 async function doReport(username) {
   console.log('[ReportBot X] Starting report for:', username);
-  
-  // Wait for page to stabilize
-  await sleep(2000);
-  
-  // Check if profile exists
-  if (!checkProfileExists()) {
-    console.log('[ReportBot X] Profile not found');
-    return { success: false, notFound: true };
-  }
-  
-  // Check for rate limiting
-  if (isRateLimited()) {
-    console.log('[ReportBot X] Rate limited, waiting...');
-    await sleep(60000);
-    return { success: false, error: 'Rate limited' };
-  }
-  
+
+  reportInProgress = true;
   try {
+    // Wait for page to stabilize.
+    await waitFor(() => document.body && document.body.innerText && document.body.innerText.length > 0, 12000, 250);
+
+    // Check if profile exists.
+    if (!checkProfileExists()) {
+      console.log('[ReportBot X] Profile not found');
+      return { success: false, notFound: true };
+    }
+
+    // Check for rate limiting.
+    if (isRateLimited()) {
+      console.log('[ReportBot X] Rate limited');
+      return { success: false, rateLimited: true, retryAfterMs: 60000 };
+    }
+
+    // Check if already reported (Twitter shows "You reported this account")
+    if (isAlreadyReported()) {
+      console.log('[ReportBot X] Already reported this account');
+      return { success: true }; // Count as success since goal is achieved
+    }
+
     // Step 1: Click the 3 dots menu (userActions button)
     console.log('[ReportBot X] Step 1: Click options menu (3 dots)');
-    if (!await clickOptionsMenu()) {
+    if (!await retryFor(() => clickOptionsMenu(), 8000)) {
       console.log('[ReportBot X] Could not find options menu');
       return { success: false, error: 'No options menu' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 2: Click Report @username button
     console.log('[ReportBot X] Step 2: Click Report button');
-    if (!await clickReportButton(username)) {
+    if (!await retryFor(() => clickReportButton(username), 8000)) {
       console.log('[ReportBot X] Could not find Report button');
       await closeDialogs();
       return { success: false, error: 'No Report button' };
     }
-    await sleep(1000);
+    await sleep(600);
     
     // Step 3: Click "Hate" option
     console.log('[ReportBot X] Step 3: Click Hate option');
-    if (!await clickHateOption()) {
+    if (!await retryFor(() => clickHateOption(), 8000)) {
       console.log('[ReportBot X] Could not find Hate option');
       await closeDialogs();
       return { success: false, error: 'No Hate option' };
@@ -77,7 +93,7 @@ async function doReport(username) {
     
     // Step 4: Click "Dehumanization" option
     console.log('[ReportBot X] Step 4: Click Dehumanization option');
-    if (!await clickDehumanizationOption()) {
+    if (!await retryFor(() => clickDehumanizationOption(), 8000)) {
       console.log('[ReportBot X] Could not find Dehumanization option');
       await closeDialogs();
       return { success: false, error: 'No Dehumanization option' };
@@ -106,6 +122,8 @@ async function doReport(username) {
     console.error('[ReportBot X] Error during report:', e);
     await closeDialogs();
     return { success: false, error: e.message };
+  } finally {
+    reportInProgress = false;
   }
 }
 
@@ -126,28 +144,70 @@ function isRateLimited() {
          pageText.includes('too many requests');
 }
 
+function isAlreadyReported() {
+  const pageText = document.body.innerText.toLowerCase();
+  return pageText.includes('you reported this account') ||
+         pageText.includes("you've already reported") ||
+         pageText.includes('already submitted a report');
+}
+
 async function clickOptionsMenu() {
   // Look for the userActions button (3 dots menu)
   const userActionsButton = document.querySelector('[data-testid="userActions"]');
   if (userActionsButton) {
+    // Use robust click with event dispatch
+    simulateClick(userActionsButton);
+    // Wait for menu to actually appear
+    const menuOpened = await waitFor(() => {
+      // Check if menu items appeared (dropdown/sheet)
+      const menuItems = document.querySelectorAll('[role="menuitem"]');
+      return menuItems.length > 0;
+    }, 3000, 100);
+    if (menuOpened) return true;
+    // Menu didn't open - try again with different click
+    userActionsButton.focus();
     userActionsButton.click();
-    return true;
+    await sleep(500);
+    return document.querySelectorAll('[role="menuitem"]').length > 0;
   }
   
   // Fallback: look for button with "More" aria-label
   const moreButton = document.querySelector('[aria-label="More"]');
   if (moreButton) {
-    moreButton.click();
-    return true;
+    simulateClick(moreButton);
+    await sleep(500);
+    return document.querySelectorAll('[role="menuitem"]').length > 0;
   }
   
   return false;
 }
 
+function simulateClick(el) {
+  if (!el) return;
+  // Dispatch mouse events for better compatibility with React/Twitter
+  const rect = el.getBoundingClientRect();
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+  
+  ['mousedown', 'mouseup', 'click'].forEach(type => {
+    el.dispatchEvent(new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: x,
+      clientY: y,
+    }));
+  });
+}
+
 async function clickReportButton(username) {
-  // Prefer the menu dialog X shows after clicking userActions
-  const dialog = document.querySelector('[data-testid="sheetDialog"]') || document;
-  const menuItems = Array.from(dialog.querySelectorAll('[role="menuitem"]'));
+  // Look for menu items in any visible menu/dropdown
+  const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+  
+  if (menuItems.length === 0) {
+    // No menu items visible yet
+    return false;
+  }
 
   const normalizedUsername = (username || '').replace(/^@/, '').toLowerCase();
 
@@ -157,7 +217,7 @@ async function clickReportButton(username) {
     if (normalizedUsername && t.includes(`report @${normalizedUsername}`)) {
       item.scrollIntoView({ block: 'center' });
       await sleep(100);
-      item.click();
+      simulateClick(item);
       return true;
     }
   }
@@ -168,18 +228,18 @@ async function clickReportButton(username) {
     if (t.startsWith('report @') || t.includes('report @')) {
       item.scrollIntoView({ block: 'center' });
       await sleep(100);
-      item.click();
+      simulateClick(item);
       return true;
     }
   }
 
-  // Fallback: any "Report" menu item inside the dialog
+  // Fallback: any "Report" menu item
   for (const item of menuItems) {
     const t = (item.textContent || '').trim().toLowerCase();
     if (t === 'report' || t.startsWith('report')) {
       item.scrollIntoView({ block: 'center' });
       await sleep(100);
-      item.click();
+      simulateClick(item);
       return true;
     }
   }
@@ -208,10 +268,10 @@ async function clickRadioOptionByText(texts) {
         // Click the label or its radio input
         const radio = label.querySelector('input[type="radio"]');
         if (radio) {
-          radio.click();
+          simulateClick(radio);
           await sleep(100);
         }
-        label.click();
+        simulateClick(label);
         await sleep(300);
         return true;
       }
@@ -219,12 +279,12 @@ async function clickRadioOptionByText(texts) {
   }
   
   // Fallback: look for any clickable element with the text
-  const allClickable = document.querySelectorAll('div, span, button');
+  const allClickable = document.querySelectorAll('div[role="option"], div[role="radio"], span, button');
   for (const text of texts) {
     for (const el of allClickable) {
       const elText = el.textContent?.trim().toLowerCase() || '';
       if (elText === text.toLowerCase() || elText.startsWith(text.toLowerCase())) {
-        el.click();
+        simulateClick(el);
         await sleep(300);
         return true;
       }
@@ -240,7 +300,7 @@ async function clickNextButton() {
   if (choiceButton && isClickable(choiceButton)) {
     choiceButton.scrollIntoView({ block: 'center' });
     await sleep(100);
-    choiceButton.click();
+    simulateClick(choiceButton);
     return true;
   }
   
@@ -255,7 +315,7 @@ async function clickNextButton() {
       if (btnText.toLowerCase() === text.toLowerCase()) {
         btn.scrollIntoView({ block: 'center' });
         await sleep(100);
-        btn.click();
+        simulateClick(btn);
         return true;
       }
     }
@@ -269,7 +329,7 @@ async function clickSubmit() {
   if (submitButton && isClickable(submitButton)) {
     submitButton.scrollIntoView({ block: 'center' });
     await sleep(100);
-    submitButton.click();
+    simulateClick(submitButton);
     return true;
   }
   
@@ -285,11 +345,11 @@ function isClickable(el) {
 }
 
 async function closeDialogs() {
-  await sleep(500);
+  await sleep(300);
   
   // Try pressing Escape first
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
-  await sleep(300);
+  await sleep(200);
   
   // Try clicking close buttons
   for (const text of CLOSE_DIALOG_TEXTS) {
@@ -297,9 +357,9 @@ async function closeDialogs() {
     for (const btn of buttons) {
       const btnText = btn.textContent?.trim().toLowerCase() || '';
       const ariaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
-      if (btnText === text.toLowerCase() || ariaLabel === text.toLowerCase()) {
-        btn.click();
-        await sleep(300);
+      if ((btnText === text.toLowerCase() || ariaLabel === text.toLowerCase()) && !btnText.includes('block')) {
+        simulateClick(btn);
+        await sleep(200);
         return true;
       }
     }
@@ -308,7 +368,7 @@ async function closeDialogs() {
   // Try clicking the close X button
   const closeButton = document.querySelector('[aria-label="Close"]');
   if (closeButton) {
-    closeButton.click();
+    simulateClick(closeButton);
     return true;
   }
   
@@ -317,6 +377,33 @@ async function closeDialogs() {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function retryFor(fn, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const ok = await fn();
+      if (ok) return true;
+    } catch (e) {
+      // ignore and retry
+    }
+    await sleep(250);
+  }
+  return false;
+}
+
+async function waitFor(conditionFn, timeoutMs, intervalMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      if (conditionFn()) return true;
+    } catch (e) {
+      // ignore and retry
+    }
+    await sleep(intervalMs);
+  }
+  return false;
 }
 
 console.log('[ReportBot X] Content script loaded');
