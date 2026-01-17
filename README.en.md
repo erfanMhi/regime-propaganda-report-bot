@@ -67,7 +67,7 @@
 6. Click the **Start** button
 7. The bot will:
    - Open each profile
-   - Report them for hateful content
+   - Report them for "Violent & hateful entities"
    - Wait 20-30 seconds between reports
 
 ### Done!
