@@ -54,7 +54,7 @@
 6. Click the green **Start** button
 7. The bot will:
    - Open each profile
-   - Report them for "Violence / Calling for violence"
+   - Report them for "False information"
    - Wait 15-25 seconds between reports
 
 ### For X (Twitter)
