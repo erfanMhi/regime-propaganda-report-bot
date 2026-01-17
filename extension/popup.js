@@ -1,9 +1,5 @@
 // Default targets for Instagram
-const DEFAULT_IG_TARGETS = `khameneiii_sarbazann
-saeedism_iri
-meysame_tamaaarr4
-hosseinmohajer_official
-alirezahp128
+const DEFAULT_IG_TARGETS = `hosseinmohajer_official
 sohrab_khatami73
 aqaaye_h
 musareza_arfei
@@ -31,9 +27,7 @@ abolhasani_officiall
 muhammad_shahi
 bedoonemarze
 navaei.ir
-nanototv2
 mr_langeruodi
-a.r.geraie
 mohammad.tajik313
 saayebanoo
 ali.zahraei.110
