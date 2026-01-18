@@ -1188,7 +1188,6 @@ Iyabo12345678
 WazirAliTunio
 Adham_ko_
 AbdulWali887650
-AloSophora
 IRQ077
 assadistleo
 Mss__Raiyah
@@ -2454,7 +2453,6 @@ wolf9688
 BinessaNaser
 YYaiji89658
 shia_strong
-Simin87891232
 alienrhj
 AutumnnBlossom
 alizakariaee5
@@ -2978,7 +2976,7 @@ let currentPlatform = 'instagram';
 let checkScheduled = false;
 
 // Daily limit configuration
-const DAILY_LIMIT = 50;
+const DAILY_LIMIT = 200;
 let igLimitOverridden = false;
 let twLimitOverridden = false;
 
