@@ -12,7 +12,7 @@ const CONTENT_SCRIPT_TIMEOUT_MS_BY_PLATFORM = {
   twitter: 45000,
 };
 const TICK_LOCK_TTL_MS = 120000;
-const DAILY_LIMIT = 50;
+const DAILY_LIMIT = 200;
 
 // ============================================================================
 // STARTUP RECOVERY
