@@ -2,6 +2,11 @@
 // Handles the actual DOM manipulation and clicking for X reporting
 // Hardened version with adaptive waiting and robust element detection
 
+(function() {
+// Guard against double injection
+if (window.__reportBotTwitterLoaded) return;
+window.__reportBotTwitterLoaded = true;
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
@@ -622,3 +627,5 @@ async function doReport(username) {
 }
 
 console.log('[ReportBot X] Content script loaded (hardened version)');
+
+})();
