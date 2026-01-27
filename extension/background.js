@@ -14,6 +14,11 @@ const CONTENT_SCRIPT_TIMEOUT_MS_BY_PLATFORM = {
 const TICK_LOCK_TTL_MS = 120000;
 const DAILY_LIMIT = 200;
 
+// Batch cooldown: after every N successful reports, wait for a cooldown period
+const BATCH_SIZE = 25;
+const BATCH_COOLDOWN_MIN_MS = 25 * 60 * 1000; // 25 minutes
+const BATCH_COOLDOWN_MAX_MS = 40 * 60 * 1000; // 40 minutes
+
 // ============================================================================
 // STARTUP RECOVERY
 // ============================================================================
@@ -90,7 +95,7 @@ async function startBot({ platform, tabId, targets, startIndex }) {
   const runId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
   // Clear any stale lock from a previous crashed/interrupted run to avoid blocking.
-  await chrome.storage.local.remove([`${prefix}_tickLock`]);
+  await chrome.storage.local.remove([`${prefix}_tickLock`, `${prefix}_cooldownEndsAt`]);
 
   // Clear any previous limit-paused state when (re)starting.
   await chrome.storage.local.set({ [`${prefix}_limitPaused`]: false });
@@ -110,6 +115,8 @@ async function startBot({ platform, tabId, targets, startIndex }) {
   });
 
   if ((startIndex || 0) === 0) {
+    // Reset batch count when starting fresh
+    await resetBatchCount(prefix);
     await chrome.storage.local.set({
       [`${prefix}_isRunning`]: true,
       [`${prefix}_currentIndex`]: 0,
@@ -136,7 +143,7 @@ async function stopBot(platform) {
     // Manual stop should clear the "paused due to daily limit" state.
     [`${prefix}_limitPaused`]: false,
   });
-  await chrome.storage.local.remove([`${prefix}_job`, `${prefix}_tickLock`]);
+  await chrome.storage.local.remove([`${prefix}_job`, `${prefix}_tickLock`, `${prefix}_cooldownEndsAt`]);
   await clearTick(platform);
   notifyPopup();
 }
@@ -284,8 +291,24 @@ async function tick(platform) {
         return;
       }
 
+      // Increment batch count and check if cooldown is needed
+      await incrementBatchCount(prefix);
+      const cooldownMs = await checkBatchCooldown(prefix);
+
       await advanceJob(prefix, job, index + 1);
-      await scheduleTick(platform, interTargetDelayMs(platform));
+
+      if (cooldownMs > 0) {
+        // Batch cooldown - wait 25-40 minutes
+        const cooldownEndsAt = Date.now() + cooldownMs;
+        await chrome.storage.local.set({ [`${prefix}_cooldownEndsAt`]: cooldownEndsAt });
+        await scheduleTick(platform, cooldownMs);
+        notifyPopup();
+      } else {
+        // Clear any previous cooldown state
+        await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
+        // Normal inter-target delay
+        await scheduleTick(platform, interTargetDelayMs(platform));
+      }
       return;
     }
 
@@ -503,4 +526,57 @@ async function isLimitOverridden(prefix) {
   const overrideKey = `${prefix}_limit_override`;
   const data = await chrome.storage.local.get([overrideKey]);
   return data[overrideKey] === getTodayKey();
+}
+
+// ============================================================================
+// BATCH COOLDOWN TRACKING
+// ============================================================================
+
+/**
+ * Get the current batch count (successful reports since last cooldown)
+ */
+async function getBatchCount(prefix) {
+  const key = `${prefix}_batch_count`;
+  const data = await chrome.storage.local.get([key]);
+  return data[key] || 0;
+}
+
+/**
+ * Increment the batch count and return the new value
+ */
+async function incrementBatchCount(prefix) {
+  const key = `${prefix}_batch_count`;
+  const data = await chrome.storage.local.get([key]);
+  const newCount = (data[key] || 0) + 1;
+  await chrome.storage.local.set({ [key]: newCount });
+  return newCount;
+}
+
+/**
+ * Reset the batch count to 0
+ */
+async function resetBatchCount(prefix) {
+  const key = `${prefix}_batch_count`;
+  await chrome.storage.local.set({ [key]: 0 });
+}
+
+/**
+ * Get a random cooldown duration between min and max
+ */
+function getRandomCooldownMs() {
+  return BATCH_COOLDOWN_MIN_MS + Math.floor(Math.random() * (BATCH_COOLDOWN_MAX_MS - BATCH_COOLDOWN_MIN_MS));
+}
+
+/**
+ * Check if batch cooldown is needed and return the delay if so
+ */
+async function checkBatchCooldown(prefix) {
+  const batchCount = await getBatchCount(prefix);
+  if (batchCount >= BATCH_SIZE) {
+    await resetBatchCount(prefix);
+    const cooldownMs = getRandomCooldownMs();
+    console.log(`[ReportBot] Batch of ${BATCH_SIZE} reports completed. Cooling down for ${Math.round(cooldownMs / 60000)} minutes.`);
+    return cooldownMs;
+  }
+  return 0;
 }

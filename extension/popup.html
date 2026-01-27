@@ -380,6 +380,52 @@
     .rate-limit-banner .btn-stop:hover{
       background:#FEF3C7;
     }
+
+    /* Cooldown Banner */
+    .cooldown-banner{
+      background:linear-gradient(135deg,#DBEAFE 0%,#BFDBFE 100%);
+      border:2px solid #3B82F6;
+      border-radius:8px;
+      padding:12px;
+      margin-bottom:14px;
+      display:none;
+    }
+    .cooldown-banner.active{
+      display:block;
+    }
+    .cooldown-banner h4{
+      font-size:12px;
+      color:#1E40AF;
+      margin-bottom:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .cooldown-banner p{
+      font-size:10px;
+      color:#1E3A8A;
+      margin-bottom:6px;
+      line-height:1.4;
+    }
+    .cooldown-timer{
+      font-size:24px;
+      font-weight:700;
+      color:#1E40AF;
+      text-align:center;
+      padding:10px 0;
+      font-family:'SF Mono',Monaco,Consolas,monospace;
+      background:rgba(255,255,255,0.5);
+      border-radius:6px;
+      margin:8px 0;
+    }
+    .cooldown-hint{
+      font-size:9px;
+      color:#3B82F6;
+      text-align:center;
+      margin-top:6px;
+      margin-bottom:0;
+      font-style:italic;
+    }
   </style>
 </head>
 <body>
@@ -425,6 +471,12 @@
         <button class="btn-small btn-continue" id="ig-continue-btn">Continue Anyway</button>
         <button class="btn-small btn-stop" id="ig-limit-stop-btn">Stop for Today</button>
       </div>
+      <div id="ig-cooldown-banner" class="cooldown-banner">
+        <h4>☕ Cooldown Break</h4>
+        <p>Pausing after 25 reports to avoid Instagram rate limits. Will automatically resume in:</p>
+        <div class="cooldown-timer" id="ig-cooldown-timer">--:--</div>
+        <p class="cooldown-hint">You can close this popup - the bot will continue automatically.</p>
+      </div>
       <div id="ig-warning" class="warning" style="display:none">Please open Instagram in a tab first</div>
       <div class="targets-section">
         <h3>Targets (one username per line, without @)</h3>
@@ -468,6 +520,12 @@
         <p>You've reported 200 accounts today. Continuing may trigger rate limits or account restrictions from X.</p>
         <button class="btn-small btn-continue" id="tw-continue-btn">Continue Anyway</button>
         <button class="btn-small btn-stop" id="tw-limit-stop-btn">Stop for Today</button>
+      </div>
+      <div id="tw-cooldown-banner" class="cooldown-banner">
+        <h4>☕ Cooldown Break</h4>
+        <p>Pausing after 25 reports to avoid X rate limits. Will automatically resume in:</p>
+        <div class="cooldown-timer" id="tw-cooldown-timer">--:--</div>
+        <p class="cooldown-hint">You can close this popup - the bot will continue automatically.</p>
       </div>
       <div id="tw-warning" class="warning" style="display:none">Please open X in a tab first</div>
       <div class="targets-section">
