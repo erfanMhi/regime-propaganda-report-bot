@@ -14,8 +14,9 @@ const CONTENT_SCRIPT_TIMEOUT_MS_BY_PLATFORM = {
 const TICK_LOCK_TTL_MS = 120000;
 const DAILY_LIMIT = 200;
 
-// Batch cooldown: after every N successful reports, wait for a cooldown period
-const BATCH_SIZE = 25;
+// Batch cooldown: after a random-sized batch of reports, wait for a cooldown period
+const BATCH_REPORT_MIN = 25;
+const BATCH_REPORT_MAX = 40;
 const BATCH_COOLDOWN_MIN_MS = 25 * 60 * 1000; // 25 minutes
 const BATCH_COOLDOWN_MAX_MS = 40 * 60 * 1000; // 40 minutes
 
@@ -93,9 +94,15 @@ async function startBot({ platform, tabId, targets, startIndex }) {
         .filter(Boolean)
     : [];
   const runId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const isFreshStart = (startIndex || 0) === 0;
 
   // Clear any stale lock from a previous crashed/interrupted run to avoid blocking.
-  await chrome.storage.local.remove([`${prefix}_tickLock`, `${prefix}_cooldownEndsAt`]);
+  await chrome.storage.local.remove([`${prefix}_tickLock`]);
+
+  if (isFreshStart) {
+    // Fresh run should not inherit a previous cooldown.
+    await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
+  }
 
   // Clear any previous limit-paused state when (re)starting.
   await chrome.storage.local.set({ [`${prefix}_limitPaused`]: false });
@@ -114,9 +121,10 @@ async function startBot({ platform, tabId, targets, startIndex }) {
     },
   });
 
-  if ((startIndex || 0) === 0) {
-    // Reset batch count when starting fresh
+  if (isFreshStart) {
+    // Reset batch count and pick a new batch target when starting fresh
     await resetBatchCount(prefix);
+    await setNewBatchTarget(prefix);
     await chrome.storage.local.set({
       [`${prefix}_isRunning`]: true,
       [`${prefix}_currentIndex`]: 0,
@@ -124,6 +132,8 @@ async function startBot({ platform, tabId, targets, startIndex }) {
       [`${prefix}_totalTargets`]: safeTargets.length,
     });
   } else {
+    // Ensure a valid batch target exists for resumed runs
+    await getBatchTarget(prefix);
     await chrome.storage.local.set({
       [`${prefix}_isRunning`]: true,
       [`${prefix}_currentIndex`]: startIndex,
@@ -131,7 +141,7 @@ async function startBot({ platform, tabId, targets, startIndex }) {
     });
   }
 
-  await scheduleTick(platform, 50);
+  await scheduleInitialTick(platform, prefix);
   notifyPopup();
 }
 
@@ -143,14 +153,20 @@ async function stopBot(platform) {
     // Manual stop should clear the "paused due to daily limit" state.
     [`${prefix}_limitPaused`]: false,
   });
-  await chrome.storage.local.remove([`${prefix}_job`, `${prefix}_tickLock`, `${prefix}_cooldownEndsAt`]);
+  await chrome.storage.local.remove([`${prefix}_job`, `${prefix}_tickLock`]);
   await clearTick(platform);
   notifyPopup();
 }
 
 async function tick(platform) {
   const prefix = toPrefix(platform);
-  const state = await chrome.storage.local.get([`${prefix}_isRunning`, `${prefix}_job`, `${prefix}_runId`, `${prefix}_tickLock`]);
+  const state = await chrome.storage.local.get([
+    `${prefix}_isRunning`,
+    `${prefix}_job`,
+    `${prefix}_runId`,
+    `${prefix}_tickLock`,
+    `${prefix}_cooldownEndsAt`,
+  ]);
 
   if (!state[`${prefix}_isRunning`]) {
     await clearTick(platform);
@@ -188,6 +204,16 @@ async function tick(platform) {
     await releaseTickLock(prefix);
     notifyPopup();
     return;
+  }
+
+  const cooldownEndsAt = state[`${prefix}_cooldownEndsAt`];
+  if (cooldownEndsAt && cooldownEndsAt > Date.now()) {
+    await scheduleTick(platform, cooldownEndsAt - Date.now());
+    await releaseTickLock(prefix);
+    return;
+  }
+  if (cooldownEndsAt) {
+    await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
   }
 
   const targets = job.targets;
@@ -260,11 +286,11 @@ async function tick(platform) {
       );
     });
 
-    // Stop/Resume can happen while we're mid-tick. If runId changed, abort without writing state.
-    if (!await isRunActive(prefix, job.runId)) return;
+    const runActiveAfterReport = await isRunActive(prefix, job.runId);
 
     if (response && response.rateLimited && response.retryAfterMs) {
       // Don't fail the target; reschedule the same index later.
+      if (!runActiveAfterReport) return;
       await chrome.storage.local.set({
         [`${prefix}_job`]: { ...job, index, attempt: 0, updatedAt: Date.now() },
       });
@@ -279,43 +305,82 @@ async function tick(platform) {
 
       // Increment daily count and check limit
       const newCount = await incrementDailyCount(prefix);
-      if (newCount >= DAILY_LIMIT && !await isLimitOverridden(prefix)) {
-        // Pause the bot - daily limit reached
-        await chrome.storage.local.set({
-          [`${prefix}_isRunning`]: false,
-          [`${prefix}_limitPaused`]: true,
-        });
-        await advanceJob(prefix, job, index + 1);
-        await clearTick(platform);
-        // Lock released by finally block
-        return;
-      }
+      const limitReached = newCount >= DAILY_LIMIT && !await isLimitOverridden(prefix);
 
       // Increment batch count and check if cooldown is needed
       await incrementBatchCount(prefix);
       const cooldownMs = await checkBatchCooldown(prefix);
+      const nextIndex = index + 1;
 
-      await advanceJob(prefix, job, index + 1);
+      if (limitReached) {
+        // Pause the bot - daily limit reached
+        await chrome.storage.local.set({ [`${prefix}_limitPaused`]: true });
+        if (runActiveAfterReport) {
+          await chrome.storage.local.set({ [`${prefix}_isRunning`]: false });
+          await advanceJob(prefix, job, nextIndex);
+          await clearTick(platform);
+        } else {
+          await advanceIndexOnly(prefix, nextIndex);
+        }
+        if (cooldownMs > 0) {
+          const cooldownEndsAt = Date.now() + cooldownMs;
+          await chrome.storage.local.set({ [`${prefix}_cooldownEndsAt`]: cooldownEndsAt });
+        }
+        return;
+      }
 
+      if (runActiveAfterReport) {
+        await advanceJob(prefix, job, nextIndex);
+        if (cooldownMs > 0) {
+          // Batch cooldown - wait 25-40 minutes
+          const cooldownEndsAt = Date.now() + cooldownMs;
+          await chrome.storage.local.set({ [`${prefix}_cooldownEndsAt`]: cooldownEndsAt });
+          await scheduleTick(platform, cooldownMs);
+          notifyPopup();
+        } else {
+          // Clear any previous cooldown state
+          await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
+          // Normal inter-target delay
+          await scheduleTick(platform, interTargetDelayMs(platform));
+        }
+        return;
+      }
+
+      await advanceIndexOnly(prefix, nextIndex);
       if (cooldownMs > 0) {
-        // Batch cooldown - wait 25-40 minutes
         const cooldownEndsAt = Date.now() + cooldownMs;
         await chrome.storage.local.set({ [`${prefix}_cooldownEndsAt`]: cooldownEndsAt });
-        await scheduleTick(platform, cooldownMs);
-        notifyPopup();
       } else {
-        // Clear any previous cooldown state
         await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
-        // Normal inter-target delay
-        await scheduleTick(platform, interTargetDelayMs(platform));
       }
       return;
     }
 
     if (response && response.notFound) {
       await addOrUpdateResult(prefix, normalizedUsername, 'skipped');
-      await advanceJob(prefix, job, index + 1);
-      await scheduleTick(platform, interTargetDelayMs(platform));
+      const nextIndex = index + 1;
+      if (runActiveAfterReport) {
+        await advanceJob(prefix, job, nextIndex);
+        await scheduleTick(platform, interTargetDelayMs(platform));
+      } else {
+        await advanceIndexOnly(prefix, nextIndex);
+      }
+      return;
+    }
+
+    // Profile unavailable (already blocked by us, or account was removed/banned)
+    // Skip fast without counting toward daily/batch limits
+    if (response && response.unavailable) {
+      console.log(`[ReportBot] Profile unavailable for ${normalizedUsername} - skipping fast (no count)`);
+      await addOrUpdateResult(prefix, normalizedUsername, 'unavailable');
+      const nextIndex = index + 1;
+      if (runActiveAfterReport) {
+        await advanceJob(prefix, job, nextIndex);
+        // Use shorter delay for unavailable profiles since there's nothing to do
+        await scheduleTick(platform, 2000 + Math.floor(Math.random() * 3000));
+      } else {
+        await advanceIndexOnly(prefix, nextIndex);
+      }
       return;
     }
 
@@ -349,6 +414,12 @@ async function advanceJob(prefix, job, nextIndex) {
   console.log(`[ReportBot] advanceJob: ${prefix} index ${job.index} -> ${nextIndex}`);
   await chrome.storage.local.set({
     [`${prefix}_job`]: { ...job, index: nextIndex, attempt: 0, updatedAt: Date.now() },
+    [`${prefix}_currentIndex`]: nextIndex,
+  });
+}
+
+async function advanceIndexOnly(prefix, nextIndex) {
+  await chrome.storage.local.set({
     [`${prefix}_currentIndex`]: nextIndex,
   });
 }
@@ -422,6 +493,23 @@ function notifyPopup() {
   chrome.runtime.sendMessage({ type: 'STATUS_UPDATE' }).catch(() => {
     // Popup might be closed; ignore.
   });
+}
+
+async function scheduleInitialTick(platform, prefix) {
+  const now = Date.now();
+  const state = await chrome.storage.local.get([`${prefix}_cooldownEndsAt`]);
+  const cooldownEndsAt = state[`${prefix}_cooldownEndsAt`];
+
+  if (cooldownEndsAt && cooldownEndsAt > now) {
+    await scheduleTick(platform, cooldownEndsAt - now);
+    return;
+  }
+
+  if (cooldownEndsAt) {
+    await chrome.storage.local.remove([`${prefix}_cooldownEndsAt`]);
+  }
+
+  await scheduleTick(platform, 50);
 }
 
 async function scheduleTick(platform, delayMs) {
@@ -532,6 +620,30 @@ async function isLimitOverridden(prefix) {
 // BATCH COOLDOWN TRACKING
 // ============================================================================
 
+function getRandomBatchTarget() {
+  return BATCH_REPORT_MIN + Math.floor(Math.random() * (BATCH_REPORT_MAX - BATCH_REPORT_MIN + 1));
+}
+
+async function getBatchTarget(prefix) {
+  const key = `${prefix}_batch_target`;
+  const data = await chrome.storage.local.get([key]);
+  const target = data[key];
+
+  if (!Number.isFinite(target) || target < BATCH_REPORT_MIN || target > BATCH_REPORT_MAX) {
+    const newTarget = getRandomBatchTarget();
+    await chrome.storage.local.set({ [key]: newTarget });
+    return newTarget;
+  }
+
+  return target;
+}
+
+async function setNewBatchTarget(prefix) {
+  const newTarget = getRandomBatchTarget();
+  await chrome.storage.local.set({ [`${prefix}_batch_target`]: newTarget });
+  return newTarget;
+}
+
 /**
  * Get the current batch count (successful reports since last cooldown)
  */
@@ -572,10 +684,12 @@ function getRandomCooldownMs() {
  */
 async function checkBatchCooldown(prefix) {
   const batchCount = await getBatchCount(prefix);
-  if (batchCount >= BATCH_SIZE) {
+  const batchTarget = await getBatchTarget(prefix);
+  if (batchCount >= batchTarget) {
     await resetBatchCount(prefix);
+    const nextTarget = await setNewBatchTarget(prefix);
     const cooldownMs = getRandomCooldownMs();
-    console.log(`[ReportBot] Batch of ${BATCH_SIZE} reports completed. Cooling down for ${Math.round(cooldownMs / 60000)} minutes.`);
+    console.log(`[ReportBot] Batch of ${batchTarget} reports completed. Cooling down for ${Math.round(cooldownMs / 60000)} minutes. Next batch target: ${nextTarget}.`);
     return cooldownMs;
   }
   return 0;
