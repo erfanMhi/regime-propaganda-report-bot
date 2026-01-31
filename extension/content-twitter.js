@@ -19,13 +19,24 @@ const TIMEOUTS = {
   POST_CLICK_VERIFY: 3000, // Quick verify after click
 };
 
+// Generic "page not found" indicators (account never existed, suspended, etc.)
 const NOT_FOUND_INDICATORS = [
   "this account doesn't exist",
-  "account suspended",
-  "this account has been suspended",
   "account doesn't exist",
   "hmm...this page doesn't exist",
+];
+
+// Specific indicators for blocked/unavailable profiles (we blocked them, or they blocked us)
+// These show a specific error when viewing a profile we've already blocked
+const PROFILE_UNAVAILABLE_INDICATORS = [
+  "account suspended",
+  "this account has been suspended",
   "this account is temporarily unavailable",
+  "you're blocked",
+  "you blocked",
+  "you have blocked",
+  "is blocked",  // "@username is blocked" shown in empty state
+  "viewing posts won't unblock",  // Specific text shown on blocked profile
 ];
 
 const RATE_LIMIT_INDICATORS = [
@@ -43,6 +54,145 @@ const ALREADY_REPORTED_INDICATORS = [
 
 const CLOSE_DIALOG_TEXTS = ['Close', 'Done', 'OK', 'Dismiss', '×', 'Cancel', 'Not now'];
 
+// ============================================================================
+// FOLLOW ACTION SAFEGUARDS - Prevent accidentally clicking Follow buttons
+// ============================================================================
+
+/**
+ * Blocklist of follow/social action terms in multiple languages.
+ * These are actions we must NEVER perform - only reporting is allowed.
+ */
+const FOLLOW_ACTION_TEXTS = [
+  // English
+  'follow', 'following', 'unfollow', 'follow back', 'message', 'subscribe',
+  // Spanish
+  'seguir', 'siguiendo', 'dejar de seguir',
+  // French
+  'suivre', 'suivi', 'abonné', "s'abonner", 'se désabonner',
+  // German
+  'folgen', 'gefolgt', 'entfolgen',
+  // Portuguese
+  'seguindo', 'deixar de seguir',
+  // Italian
+  'segui', 'seguiti', 'smetti di seguire',
+  // Turkish
+  'takip et', 'takip ediliyor', 'takibi bırak',
+  // Dutch
+  'volgen', 'volgend', 'ontvolgen',
+  // Polish
+  'obserwuj', 'obserwujesz', 'przestań obserwować',
+  // Russian
+  'подписаться', 'подписки', 'отписаться',
+  // Persian/Farsi
+  'دنبال کردن', 'دنبال می‌کنید', 'لغو دنبال',
+  // Arabic
+  'متابعة', 'تتابع', 'إلغاء المتابعة',
+  // Chinese (Simplified & Traditional)
+  '关注', '已关注', '取消关注', '關注', '已關注', '取消關注',
+  // Japanese
+  'フォロー', 'フォロー中', 'フォローを解除',
+  // Korean
+  '팔로우', '팔로잉', '언팔로우',
+  // Hindi
+  'फ़ॉलो करें', 'फ़ॉलो कर रहे हैं',
+];
+
+/**
+ * Patterns for data-testid that indicate follow/unfollow buttons.
+ * Twitter uses format like "1234567890-follow" or "1234567890-unfollow"
+ */
+const FOLLOW_TESTID_PATTERNS = [
+  /-follow$/i,
+  /-unfollow$/i,
+  /^follow$/i,
+  /^unfollow$/i,
+];
+
+/**
+ * Normalize text for comparison - lowercase, trim, collapse whitespace
+ */
+function normalizeText(text) {
+  return String(text || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Check if text matches any follow action label
+ */
+function isFollowActionLabel(text) {
+  const normalized = normalizeText(text);
+  if (!normalized) return false;
+  
+  return FOLLOW_ACTION_TEXTS.some((label) => {
+    if (normalized === label) return true;
+    if (normalized.startsWith(`${label} `)) return true;
+    // Check if the primary word is a follow action
+    const words = normalized.split(/\s+/);
+    if (words.length === 1 && words[0] === label) return true;
+    if (words.length <= 3 && words.includes(label)) return true;
+    return false;
+  });
+}
+
+/**
+ * Check if an element's data-testid indicates a follow button
+ */
+function hasFollowTestId(el) {
+  if (!el) return false;
+  const testId = el.getAttribute('data-testid') || '';
+  if (!testId) return false;
+  return FOLLOW_TESTID_PATTERNS.some(pattern => pattern.test(testId));
+}
+
+/**
+ * Check if an element (or its button ancestor) is a follow action.
+ * Uses multiple detection strategies for robustness.
+ */
+function isFollowActionElement(el) {
+  if (!el) return false;
+  
+  // Check the element itself and its closest button ancestor
+  const targets = [el];
+  const btnAncestor = el.closest('button, [role="button"]');
+  if (btnAncestor && btnAncestor !== el) {
+    targets.push(btnAncestor);
+  }
+  
+  for (const target of targets) {
+    // Strategy 1: Check data-testid pattern (most reliable for Twitter)
+    if (hasFollowTestId(target)) {
+      console.log('[ReportBot X] BLOCKED: data-testid indicates follow button');
+      return true;
+    }
+    
+    // Strategy 2: Check aria-label for "Follow @" pattern
+    const ariaLabel = target.getAttribute('aria-label') || '';
+    if (/^follow\s*@/i.test(ariaLabel) || /^unfollow\s*@/i.test(ariaLabel)) {
+      console.log('[ReportBot X] BLOCKED: aria-label indicates follow button:', ariaLabel);
+      return true;
+    }
+    if (isFollowActionLabel(ariaLabel)) {
+      console.log('[ReportBot X] BLOCKED: aria-label matches blocklist:', ariaLabel);
+      return true;
+    }
+    
+    // Strategy 3: Check visible text content
+    const text = target.textContent || '';
+    if (isFollowActionLabel(text)) {
+      console.log('[ReportBot X] BLOCKED: text content matches blocklist:', text.substring(0, 50));
+      return true;
+    }
+    
+    // Strategy 4: Check title attribute
+    const title = target.getAttribute('title') || '';
+    if (isFollowActionLabel(title)) {
+      console.log('[ReportBot X] BLOCKED: title matches blocklist:', title);
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 let reportInProgress = false;
 
 // ============================================================================
@@ -56,9 +206,17 @@ function sleep(ms) {
 /**
  * Simulates a realistic click event with mousedown, mouseup, and click.
  * This works better with React-based UIs that may not respond to synthetic .click()
+ * 
+ * SAFETY: Refuses to click any element identified as a follow action.
  */
 function simulateClick(el) {
   if (!el) return false;
+
+  // CRITICAL SAFETY CHECK: Never click follow buttons
+  if (isFollowActionElement(el)) {
+    console.warn('[ReportBot X] BLOCKED: Refused to click follow action element');
+    return false;
+  }
 
   // Use standard scroll behavior; non-standard values can throw in some Chromium builds.
   el.scrollIntoView({ block: 'center', behavior: 'auto' });
@@ -86,9 +244,14 @@ function simulateClick(el) {
 /**
  * Checks if an element is actually clickable (visible, not disabled, not hidden)
  * Note: Does NOT check viewport position since simulateClick() handles scrolling
+ * 
+ * SAFETY: Returns false for any follow action element.
  */
 function isClickable(el) {
   if (!el || !el.isConnected) return false;
+
+  // SAFETY: Follow action elements are never "clickable" for our purposes
+  if (isFollowActionElement(el)) return false;
 
   try {
     const style = getComputedStyle(el);
@@ -261,8 +424,76 @@ async function waitFor(conditionFn, timeoutMs, intervalMs) {
 // PRE-FLIGHT CHECKS
 // ============================================================================
 
+/**
+ * Checks if the profile is unavailable (already blocked, suspended, or blocked us).
+ * These are different from 404s - the account exists but is inaccessible.
+ * 
+ * A blocked profile shows:
+ * - Button with data-testid ending in "-unblock" showing "Blocked" text
+ * - Empty state with data-testid="emptyState" containing "@username is blocked"
+ * - Text "Viewing posts won't unblock @username"
+ * 
+ * @returns {boolean} true if profile is unavailable (should skip without counting)
+ */
+function isProfileUnavailable() {
+  const pageText = document.body?.innerText?.toLowerCase() || '';
+  
+  // Check 1: Look for "Unblock" button (data-testid ending with "-unblock")
+  // This is the most reliable indicator - shows "Blocked" button on blocked profiles
+  const unblockBtn = document.querySelector('[data-testid$="-unblock"]');
+  if (unblockBtn) {
+    console.log('[ReportBot X] Profile unavailable: Found Unblock button (already blocked)');
+    return true;
+  }
+  
+  // Check 2: Look for the empty state header that says "@username is blocked"
+  const emptyStateHeader = document.querySelector('[data-testid="empty_state_header_text"]');
+  if (emptyStateHeader) {
+    const headerText = (emptyStateHeader.textContent || '').toLowerCase();
+    if (headerText.includes('is blocked')) {
+      console.log('[ReportBot X] Profile unavailable: Found "is blocked" in empty state header');
+      return true;
+    }
+  }
+  
+  // Check 3: Look for the empty state body with "viewing posts won't unblock"
+  const emptyStateBody = document.querySelector('[data-testid="empty_state_body_text"]');
+  if (emptyStateBody) {
+    const bodyText = (emptyStateBody.textContent || '').toLowerCase();
+    if (bodyText.includes("viewing posts won't unblock") || bodyText.includes("won't unblock")) {
+      console.log('[ReportBot X] Profile unavailable: Found unblock text in empty state body');
+      return true;
+    }
+  }
+  
+  // Check 4: Text-based indicators as fallback
+  for (const indicator of PROFILE_UNAVAILABLE_INDICATORS) {
+    if (pageText.includes(indicator.toLowerCase())) {
+      // For "is blocked", require it to be preceded by @ to avoid false positives
+      if (indicator === 'is blocked') {
+        // Check if it's in the context of "@username is blocked"
+        if (pageText.includes('@') && pageText.includes('is blocked')) {
+          console.log('[ReportBot X] Profile unavailable: Found "@...is blocked" pattern');
+          return true;
+        }
+      } else {
+        console.log('[ReportBot X] Profile unavailable: Found indicator:', indicator);
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Checks if the profile exists (generic 404 / not found check)
+ * This is different from isProfileUnavailable() - this catches generic 404s.
+ * 
+ * @returns {boolean} true if profile exists, false if 404
+ */
 function checkProfileExists() {
-  const pageText = document.body.innerText.toLowerCase();
+  const pageText = document.body?.innerText?.toLowerCase() || '';
   for (const indicator of NOT_FOUND_INDICATORS) {
     if (pageText.includes(indicator.toLowerCase())) {
       return false;
@@ -299,16 +530,24 @@ function isAlreadyReported() {
  * Finds the userActions button (3-dots menu)
  */
 function findOptionsButton() {
-  // Primary: data-testid
+  // Primary: data-testid="userActions" (the 3-dots menu on profile)
   const userActions = document.querySelector('[data-testid="userActions"]');
   if (userActions && isClickable(userActions)) {
-    return userActions;
+    // Double-check: userActions should NEVER be a follow button, but verify anyway
+    if (!isFollowActionElement(userActions)) {
+      return userActions;
+    }
+    console.warn('[ReportBot X] userActions element unexpectedly flagged as follow action');
   }
 
-  // Fallback: aria-label="More"
+  // Fallback: aria-label="More" - but verify it's not a follow button
   const moreButton = document.querySelector('[aria-label="More"]');
   if (moreButton && isClickable(moreButton)) {
-    return moreButton;
+    // Extra safety: ensure this isn't somehow a follow button
+    if (!isFollowActionElement(moreButton)) {
+      return moreButton;
+    }
+    console.warn('[ReportBot X] More button unexpectedly flagged as follow action');
   }
 
   return null;
@@ -434,6 +673,307 @@ async function ensureDialogsClosed(maxAttempts = 3) {
 }
 
 // ============================================================================
+// POST-REPORT BLOCK FLOW
+// ============================================================================
+
+/**
+ * Finds the Block @username menu item in the options menu
+ * @param {string} username - The username to block
+ */
+function findBlockMenuItem(username) {
+  const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+  const normalizedUsername = (username || '').replace(/^@/, '').toLowerCase();
+
+  // Look for "Block @username" menu item with data-testid="block"
+  for (const item of menuItems) {
+    const testId = item.getAttribute('data-testid') || '';
+    if (testId === 'block' && isClickable(item)) {
+      return item;
+    }
+  }
+
+  // Strong match: "Block @username"
+  for (const item of menuItems) {
+    const t = (item.textContent || '').trim().toLowerCase();
+    if (normalizedUsername && t.includes(`block @${normalizedUsername}`) && isClickable(item)) {
+      return item;
+    }
+  }
+
+  // Fallback: any "Block @" item
+  for (const item of menuItems) {
+    const t = (item.textContent || '').trim().toLowerCase();
+    if ((t.startsWith('block @') || t.includes('block @')) && isClickable(item)) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Finds the Block confirmation button in the confirmation dialog
+ * Uses data-testid="confirmationSheetConfirm" which is specific to Twitter
+ */
+function findBlockConfirmButton() {
+  // Primary: data-testid="confirmationSheetConfirm"
+  const confirmBtn = document.querySelector('[data-testid="confirmationSheetConfirm"]');
+  if (confirmBtn && isClickable(confirmBtn)) {
+    const text = (confirmBtn.textContent || '').toLowerCase();
+    // Make sure it says "Block" and not something else
+    if (text.includes('block')) {
+      return confirmBtn;
+    }
+  }
+
+  // Fallback: look for confirmation dialog with "Block" button
+  const dialogs = document.querySelectorAll('[data-testid="confirmationSheetDialog"], [role="dialog"]');
+  for (const dialog of dialogs) {
+    const buttons = dialog.querySelectorAll('button, [role="button"]');
+    for (const btn of buttons) {
+      const text = (btn.textContent || '').trim().toLowerCase();
+      // Look for exact "block" button (not "unblock" or "block and report")
+      if (text === 'block' && isClickable(btn)) {
+        return btn;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Checks if we see "Unblock" in the menu or button, indicating already blocked
+ */
+function isAlreadyBlocked() {
+  // Check for unblock button with data-testid pattern
+  const unblockBtn = document.querySelector('[data-testid$="-unblock"]');
+  if (unblockBtn) return true;
+
+  // Check for "Unblock" in menu items
+  const menuItems = document.querySelectorAll('[role="menuitem"]');
+  for (const item of menuItems) {
+    const text = (item.textContent || '').toLowerCase();
+    if (text.includes('unblock') && isClickable(item)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Performs the block sequence after a report is finished:
+ * 1. Click the 3-dots options button
+ * 2. Click "Block @username" in the menu
+ * 3. Click "Block" in the confirmation dialog
+ */
+async function performBlockSequence(username) {
+  console.log('[ReportBot X] ========================================');
+  console.log('[ReportBot X] BLOCK SEQUENCE: Starting for', username);
+  console.log('[ReportBot X] ========================================');
+
+  // Ensure any lingering dialogs are closed first
+  await ensureDialogsClosed();
+  await sleep(300);
+
+  // Step 1: Click options button (3 dots)
+  console.log('[ReportBot X] BLOCK: Step 1 - Finding options button...');
+  const optionsBtn = await waitForElement(findOptionsButton, TIMEOUTS.ELEMENT_WAIT);
+  
+  if (!optionsBtn) {
+    console.log('[ReportBot X] BLOCK: FAILED - Could not find options button');
+    return { success: false, error: 'No options menu for block' };
+  }
+
+  console.log('[ReportBot X] BLOCK: Clicking options button...');
+  simulateClick(optionsBtn);
+
+  // Wait for menu to open
+  const menuOpened = await waitForMenuToOpen(TIMEOUTS.MENU_OPEN);
+  if (!menuOpened) {
+    console.log('[ReportBot X] BLOCK: Menu did not open, retrying...');
+    optionsBtn.focus();
+    await sleep(100);
+    simulateClick(optionsBtn);
+    
+    const retryMenuOpened = await waitForMenuToOpen(TIMEOUTS.MENU_OPEN);
+    if (!retryMenuOpened) {
+      console.log('[ReportBot X] BLOCK: FAILED - Menu still did not open');
+      await ensureDialogsClosed();
+      return { success: false, error: 'Menu did not open for block' };
+    }
+  }
+
+  // Check if already blocked (would show "Unblock" instead)
+  if (isAlreadyBlocked()) {
+    console.log('[ReportBot X] BLOCK: Account already blocked - skipping');
+    await ensureDialogsClosed();
+    return { success: true, alreadyBlocked: true };
+  }
+
+  // Step 2: Click Block @username menu item
+  console.log('[ReportBot X] BLOCK: Step 2 - Finding Block menu item...');
+  const blockMenuItem = await waitForElement(() => findBlockMenuItem(username), TIMEOUTS.ELEMENT_WAIT);
+  
+  if (!blockMenuItem) {
+    console.log('[ReportBot X] BLOCK: FAILED - Could not find Block menu item');
+    // Log what menu items are visible
+    const menuItems = document.querySelectorAll('[role="menuitem"]');
+    const visibleItems = [];
+    for (const item of menuItems) {
+      if (isClickable(item)) {
+        visibleItems.push(item.textContent?.trim().substring(0, 40) || '(no text)');
+      }
+    }
+    console.log('[ReportBot X] BLOCK: Visible menu items:', visibleItems);
+    await ensureDialogsClosed();
+    return { success: false, error: 'No Block option in menu' };
+  }
+
+  console.log('[ReportBot X] BLOCK: Clicking Block menu item:', blockMenuItem.textContent?.trim());
+  simulateClick(blockMenuItem);
+
+  // Step 3: Wait for confirmation dialog and click Block
+  console.log('[ReportBot X] BLOCK: Step 3 - Waiting for confirmation dialog...');
+  const confirmBtn = await waitForElement(findBlockConfirmButton, TIMEOUTS.ELEMENT_WAIT);
+  
+  if (!confirmBtn) {
+    console.log('[ReportBot X] BLOCK: FAILED - Could not find Block confirmation button');
+    // Log what dialogs are visible
+    const dialogs = document.querySelectorAll('[role="dialog"], [data-testid="confirmationSheetDialog"]');
+    console.log('[ReportBot X] BLOCK: Dialogs found:', dialogs.length);
+    for (const d of dialogs) {
+      console.log('[ReportBot X] BLOCK: Dialog content:', d.textContent?.substring(0, 100));
+    }
+    await ensureDialogsClosed();
+    return { success: false, error: 'No Block confirmation button' };
+  }
+
+  console.log('[ReportBot X] BLOCK: Clicking Block confirmation button...');
+  simulateClick(confirmBtn);
+
+  // Wait for the dialog to close (indicates block was successful)
+  await sleep(1000);
+  
+  const dialogClosed = await waitFor(() => {
+    const dialog = document.querySelector('[data-testid="confirmationSheetDialog"]');
+    return !dialog || !isClickable(dialog.querySelector('button'));
+  }, TIMEOUTS.ELEMENT_WAIT, TIMEOUTS.RETRY_INTERVAL);
+
+  if (dialogClosed) {
+    console.log('[ReportBot X] ========================================');
+    console.log('[ReportBot X] BLOCK SEQUENCE: Completed successfully!');
+    console.log('[ReportBot X] ========================================');
+  } else {
+    console.log('[ReportBot X] BLOCK: Confirmation dialog may still be open, but continuing');
+  }
+
+  // Wait 4 seconds on success for user review
+  console.log('[ReportBot X] BLOCK: Waiting 4 seconds for user review...');
+  await sleep(4000);
+
+  return { success: true };
+}
+
+/**
+ * Checks for and executes any pending block from a previous page load
+ */
+async function checkAndExecutePendingBlock() {
+  const pendingUsername = localStorage.getItem('reportbot_twitter_pending_block');
+  if (!pendingUsername) {
+    return;
+  }
+  
+  // Prevent concurrent operations
+  if (reportInProgress) {
+    console.log('[ReportBot X] Report already in progress, skipping pending block');
+    return;
+  }
+  
+  console.log('[ReportBot X] ========================================');
+  console.log('[ReportBot X] PENDING BLOCK DETECTED for:', pendingUsername);
+  console.log('[ReportBot X] ========================================');
+  
+  // Clear the flag immediately to prevent re-execution
+  localStorage.removeItem('reportbot_twitter_pending_block');
+  
+  // Set the flag to prevent concurrent operations
+  reportInProgress = true;
+  
+  try {
+    // Wait for page to be ready - verify options button OR unavailable state
+    console.log('[ReportBot X] Waiting for page to be ready...');
+    
+    const pageReady = await waitFor(() => {
+      const optionsBtn = findOptionsButton();
+      const isUnavailable = isProfileUnavailable();
+      return !!optionsBtn || isUnavailable;
+    }, TIMEOUTS.PAGE_LOAD, 300);
+    
+    if (!pageReady) {
+      console.log('[ReportBot X] Page did not become ready in time');
+      return;
+    }
+    
+    // Check if profile is unavailable (already blocked or suspended)
+    if (isProfileUnavailable()) {
+      console.log('[ReportBot X] Profile unavailable after reload - block already complete or account suspended');
+      try {
+        chrome.runtime.sendMessage({
+          action: 'blockComplete',
+          username: pendingUsername,
+          success: true,
+          alreadyUnavailable: true
+        });
+      } catch (e) {
+        console.log('[ReportBot X] Could not notify extension:', e.message);
+      }
+      return;
+    }
+    
+    console.log('[ReportBot X] Page is ready, executing block sequence...');
+    
+    // Verify URL matches expected username
+    const currentUrl = window.location.href;
+    console.log('[ReportBot X] Current URL:', currentUrl);
+    
+    const urlLower = currentUrl.toLowerCase();
+    const usernameLower = pendingUsername.toLowerCase();
+    if (!urlLower.includes('/' + usernameLower) && !urlLower.includes('/' + usernameLower + '/')) {
+      console.log('[ReportBot X] WARNING: Current URL does not match expected username');
+      console.log('[ReportBot X] Expected:', pendingUsername);
+      console.log('[ReportBot X] Proceeding anyway...');
+    }
+    
+    // Execute the block sequence
+    const blockResult = await performBlockSequence(pendingUsername);
+    
+    if (blockResult.success) {
+      console.log('[ReportBot X] ========================================');
+      console.log('[ReportBot X] BLOCK COMPLETED SUCCESSFULLY!');
+      console.log('[ReportBot X] ========================================');
+    } else {
+      console.log('[ReportBot X] Block sequence failed:', blockResult.error || 'Unknown error');
+    }
+    
+    // Notify the popup/background that block is complete
+    try {
+      chrome.runtime.sendMessage({
+        action: 'blockComplete',
+        username: pendingUsername,
+        success: blockResult.success,
+        error: blockResult.error
+      });
+    } catch (e) {
+      console.log('[ReportBot X] Could not notify extension:', e.message);
+    }
+  } finally {
+    reportInProgress = false;
+  }
+}
+
+// ============================================================================
 // MESSAGE LISTENER
 // ============================================================================
 
@@ -479,9 +1019,16 @@ async function doReport(username) {
     const profileLoaded = await waitFor(() => {
       const userActions = document.querySelector('[data-testid="userActions"]');
       const profileHeader = document.querySelector('[data-testid="UserName"]');
-      const notFoundText = document.body?.innerText?.toLowerCase() || '';
-      const isNotFound = NOT_FOUND_INDICATORS.some(ind => notFoundText.includes(ind.toLowerCase()));
-      return userActions || profileHeader || isNotFound;
+      const pageText = document.body?.innerText?.toLowerCase() || '';
+      
+      // Check for any "page ready" indicators:
+      // 1. Options button or profile header visible (normal profile)
+      // 2. Generic 404 page
+      // 3. Unavailable profile (suspended, blocked, etc.)
+      const isNotFound = NOT_FOUND_INDICATORS.some(ind => pageText.includes(ind.toLowerCase()));
+      const isUnavailable = PROFILE_UNAVAILABLE_INDICATORS.some(ind => pageText.includes(ind.toLowerCase()));
+      
+      return userActions || profileHeader || isNotFound || isUnavailable;
     }, TIMEOUTS.PAGE_LOAD, 300);
 
     if (!profileLoaded) {
@@ -492,8 +1039,20 @@ async function doReport(username) {
     // ========================================
     // Phase 2: Pre-flight checks
     // ========================================
+    
+    // FIRST: Check if profile is unavailable (already blocked by us, suspended, etc.)
+    // This is a fast skip - no report or block needed, don't count toward pause
+    if (isProfileUnavailable()) {
+      console.log('[ReportBot X] Profile unavailable (blocked/suspended) - skipping fast');
+      return { 
+        success: false, 
+        unavailable: true, 
+        message: 'Profile unavailable (already blocked or suspended)' 
+      };
+    }
+    
     if (!checkProfileExists()) {
-      console.log('[ReportBot X] Profile not found');
+      console.log('[ReportBot X] Profile not found (404)');
       return { success: false, notFound: true };
     }
 
@@ -503,7 +1062,12 @@ async function doReport(username) {
     }
 
     if (isAlreadyReported()) {
-      console.log('[ReportBot X] Already reported - treating as success');
+      console.log('[ReportBot X] Already reported - proceeding to block flow');
+      const blockResult = await performBlockSequence(username);
+      if (!blockResult.success) {
+        console.log('[ReportBot X] Block sequence failed:', blockResult.error || 'Unknown');
+        return { success: false, error: blockResult.error || 'Block sequence failed' };
+      }
       return { success: true };
     }
 
@@ -615,7 +1179,29 @@ async function doReport(username) {
     if (!didSubmit) {
       return { success: false, error: 'Report did not reach submit step' };
     }
-    return { success: true };
+
+    // ========================================
+    // Post-report: Store pending block and reload page
+    // ========================================
+    console.log('[ReportBot X] Step 6: Scheduling block after page reload...');
+    
+    // Store the username for blocking after reload
+    localStorage.setItem('reportbot_twitter_pending_block', username);
+    console.log('[ReportBot X] Stored pending block for:', username);
+    
+    // IMPORTANT: We need to return success BEFORE reloading, otherwise the
+    // message channel will be destroyed and the background script will time out.
+    // We use setTimeout to delay the reload so the response can be sent first.
+    console.log('[ReportBot X] Report complete! Scheduling page reload for block...');
+    
+    // Schedule reload after a short delay to allow response to be sent
+    setTimeout(() => {
+      console.log('[ReportBot X] Reloading page now...');
+      window.location.reload();
+    }, 100);
+    
+    // Return success immediately - block will happen after reload
+    return { success: true, pendingBlock: true };
 
   } catch (e) {
     console.error('[ReportBot X] Error during report:', e);
@@ -625,6 +1211,9 @@ async function doReport(username) {
     reportInProgress = false;
   }
 }
+
+// Check for pending blocks when the script loads
+checkAndExecutePendingBlock();
 
 console.log('[ReportBot X] Content script loaded (hardened version)');
 
