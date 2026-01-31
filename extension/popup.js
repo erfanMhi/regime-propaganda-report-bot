@@ -6242,6 +6242,223 @@ function shuffleTargets(targetsStr) {
   return shuffleArray(lines).join('\n');
 }
 
+function getTargetsFromString(targetsStr) {
+  return String(targetsStr || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function buildPlatformBackup(prefix, storage) {
+  const targetsKey = `${prefix}_targets`;
+  const targets = typeof storage[targetsKey] === 'string' ? storage[targetsKey] : '';
+  const targetsList = getTargetsFromString(targets);
+  const totalTargets = Number.isFinite(storage[`${prefix}_totalTargets`])
+    ? storage[`${prefix}_totalTargets`]
+    : targetsList.length;
+  const currentIndex = Number.isFinite(storage[`${prefix}_currentIndex`])
+    ? storage[`${prefix}_currentIndex`]
+    : 0;
+  const results = Array.isArray(storage[`${prefix}_results`])
+    ? storage[`${prefix}_results`]
+    : [];
+
+  return {
+    targets,
+    totalTargets,
+    currentIndex,
+    results,
+    dailyCount: storage[`${prefix}_daily_count`],
+    dailyDate: storage[`${prefix}_daily_date`],
+    limitOverride: storage[`${prefix}_limit_override`],
+  };
+}
+
+function getBackupFilename() {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  return `report-bot-progress-${dateStamp}.json`;
+}
+
+async function exportProgress() {
+  const keys = [
+    'ig_targets', 'ig_results', 'ig_currentIndex', 'ig_totalTargets',
+    'ig_daily_count', 'ig_daily_date', 'ig_limit_override',
+    'tw_targets', 'tw_results', 'tw_currentIndex', 'tw_totalTargets',
+    'tw_daily_count', 'tw_daily_date', 'tw_limit_override',
+  ];
+
+  const storage = await chrome.storage.local.get(keys);
+
+  // Prefer textarea values if available (ensures most recent edits are included)
+  if ($('ig-targets') && typeof $('ig-targets').value === 'string') {
+    storage.ig_targets = $('ig-targets').value;
+  }
+  if ($('tw-targets') && typeof $('tw-targets').value === 'string') {
+    storage.tw_targets = $('tw-targets').value;
+  }
+
+  const payload = {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    extensionVersion: chrome.runtime.getManifest().version,
+    data: {
+      instagram: buildPlatformBackup('ig', storage),
+      twitter: buildPlatformBackup('tw', storage),
+    },
+  };
+
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  chrome.downloads.download(
+    { url, filename: getBackupFilename(), saveAs: true },
+    (downloadId) => {
+      const err = chrome.runtime.lastError;
+      if (err) {
+        alert(`Export failed: ${err.message}`);
+      } else if (downloadId) {
+        // Success - user saved the file
+        console.log('[ReportBot] Export successful, downloadId:', downloadId);
+      }
+      // Note: downloadId is undefined if user cancelled - no action needed
+    }
+  );
+
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function extractPlatformData(backup, primaryKey, fallbackKey) {
+  if (backup && backup.data) {
+    if (backup.data[primaryKey]) return backup.data[primaryKey];
+    if (backup.data[fallbackKey]) return backup.data[fallbackKey];
+  }
+  if (backup && backup[primaryKey]) return backup[primaryKey];
+  if (backup && backup[fallbackKey]) return backup[fallbackKey];
+  return null;
+}
+
+function normalizeImportedPlatformData(platformData) {
+  const targets = typeof platformData?.targets === 'string' ? platformData.targets : '';
+  const targetsList = getTargetsFromString(targets);
+  const totalTargets = Number.isFinite(platformData?.totalTargets)
+    ? platformData.totalTargets
+    : targetsList.length;
+
+  let currentIndex = Number.isFinite(platformData?.currentIndex)
+    ? platformData.currentIndex
+    : 0;
+  if (currentIndex < 0) currentIndex = 0;
+  if (currentIndex > totalTargets) currentIndex = totalTargets;
+
+  const results = Array.isArray(platformData?.results) ? platformData.results : [];
+
+  return {
+    targets,
+    targetsList,
+    totalTargets,
+    currentIndex,
+    results,
+    dailyCount: Number.isFinite(platformData?.dailyCount) ? platformData.dailyCount : undefined,
+    dailyDate: typeof platformData?.dailyDate === 'string' ? platformData.dailyDate : undefined,
+    limitOverride: typeof platformData?.limitOverride === 'string' ? platformData.limitOverride : undefined,
+  };
+}
+
+async function importProgressFromText(rawText) {
+  let backup = null;
+  try {
+    backup = JSON.parse(rawText);
+  } catch (e) {
+    alert('Import failed: invalid JSON backup file.');
+    return;
+  }
+
+  const igRaw = extractPlatformData(backup, 'instagram', 'ig');
+  const twRaw = extractPlatformData(backup, 'twitter', 'tw');
+
+  if (!igRaw && !twRaw) {
+    alert('Import failed: backup file is missing platform data.');
+    return;
+  }
+
+  // Stop any running bots first to clear alarms and prevent race conditions
+  try {
+    if (igRaw) {
+      chrome.runtime.sendMessage({ type: 'STOP_BOT', platform: 'instagram' });
+    }
+    if (twRaw) {
+      chrome.runtime.sendMessage({ type: 'STOP_BOT', platform: 'twitter' });
+    }
+  } catch (e) {
+    // Background script might not be ready; continue anyway
+  }
+
+  // Small delay to let STOP_BOT clear alarms
+  await new Promise((r) => setTimeout(r, 100));
+
+  const updates = {};
+
+  if (igRaw) {
+    const igData = normalizeImportedPlatformData(igRaw);
+    updates.ig_targets = igData.targets;
+    updates.ig_targetsList = igData.targetsList;
+    updates.ig_totalTargets = igData.totalTargets;
+    updates.ig_currentIndex = igData.currentIndex;
+    updates.ig_results = igData.results;
+    updates.ig_isRunning = false;
+    updates.ig_limitPaused = false;
+    updates.ig_cooldownEndsAt = null;
+    updates.ig_daily_count = igData.dailyCount ?? 0;
+    updates.ig_daily_date = igData.dailyDate ?? getTodayKey();
+    updates.ig_limit_override = igData.limitOverride ?? null;
+    // Clear stale job/run state to prevent background script confusion
+    updates.ig_job = null;
+    updates.ig_runId = null;
+    updates.ig_tickLock = null;
+
+    if ($('ig-targets')) {
+      $('ig-targets').value = igData.targets;
+    }
+  }
+
+  if (twRaw) {
+    const twData = normalizeImportedPlatformData(twRaw);
+    updates.tw_targets = twData.targets;
+    updates.tw_targetsList = twData.targetsList;
+    updates.tw_totalTargets = twData.totalTargets;
+    updates.tw_currentIndex = twData.currentIndex;
+    updates.tw_results = twData.results;
+    updates.tw_isRunning = false;
+    updates.tw_limitPaused = false;
+    updates.tw_cooldownEndsAt = null;
+    updates.tw_daily_count = twData.dailyCount ?? 0;
+    updates.tw_daily_date = twData.dailyDate ?? getTodayKey();
+    updates.tw_limit_override = twData.limitOverride ?? null;
+    // Clear stale job/run state to prevent background script confusion
+    updates.tw_job = null;
+    updates.tw_runId = null;
+    updates.tw_tickLock = null;
+
+    if ($('tw-targets')) {
+      $('tw-targets').value = twData.targets;
+    }
+  }
+
+  try {
+    await chrome.storage.local.set(updates);
+  } catch (storageErr) {
+    console.error('[ReportBot] Storage error during import:', storageErr);
+    alert(`Import failed: Could not save data. ${storageErr.message || 'Storage quota may be exceeded.'}`);
+    return;
+  }
+
+  await loadDailyCounts();
+  requestCheck();
+
+  alert('Progress imported successfully. You can resume from the paused state.');
+}
+
 async function init() {
   // Setup tab switching
   document.querySelectorAll('.tab').forEach(tab => {
@@ -6281,6 +6498,21 @@ async function init() {
   $('tw-stop-btn').onclick = () => stop('twitter');
   $('tw-continue-btn').onclick = () => overrideDailyLimit('twitter');
   $('tw-limit-stop-btn').onclick = () => stopForLimit('twitter');
+
+  const exportBtn = $('export-progress-btn');
+  const importBtn = $('import-progress-btn');
+  const importInput = $('import-file-input');
+  if (exportBtn && importBtn && importInput) {
+    exportBtn.onclick = () => exportProgress();
+    importBtn.onclick = () => importInput.click();
+    importInput.onchange = async () => {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+      const text = await file.text();
+      await importProgressFromText(text);
+      importInput.value = '';
+    };
+  }
 
   // Popout button - open in standalone tab
   const popoutBtn = $('popout-btn');
@@ -6449,6 +6681,7 @@ function renderResults(prefix, results) {
     success: 'Reported ✓',
     failed: 'Failed ✗',
     skipped: 'Not Found',
+    unavailable: 'Blocked ⊘',
     processing: 'Processing...',
   };
 

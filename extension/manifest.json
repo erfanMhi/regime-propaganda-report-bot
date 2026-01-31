@@ -3,7 +3,7 @@
   "name": "FTR Report Bot",
   "version": "2.0.0",
   "description": "Fight back against the Islamic regime's propaganda machine",
-  "permissions": ["activeTab", "storage", "scripting", "tabs", "alarms"],
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "alarms", "downloads"],
   "host_permissions": ["https://www.instagram.com/*", "https://x.com/*", "https://twitter.com/*"],
   "action": {
     "default_popup": "popup.html",
